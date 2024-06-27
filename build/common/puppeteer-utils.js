@@ -19,7 +19,7 @@ const waitForSelector = async (page, selector, option, callback) => {
             success = true;
         }
         catch (error) {
-            console.log(`click ${selector} error: `, error);
+            console.log(`wait for ${selector} error: `, error);
             success = false;
         }
     }
@@ -36,28 +36,29 @@ const waitForSelector = async (page, selector, option, callback) => {
             catch (error) {
                 counter++;
                 if (counter >= countLimit) {
-                    console.log(`click error ${counter}: `, error);
+                    console.log(`wait for ${counter} error: `, error);
                     break;
                 }
                 success = false;
             }
         }
     }
-    if (success) {
+    try {
         await callback(success);
+    }
+    catch (error) {
+        success = false;
     }
     return success;
 };
 exports.waitForSelector = waitForSelector;
 const click = async (page, selector, option) => {
-    let isSuccess = false;
-    await (0, exports.waitForSelector)(page, selector, option, async function (success) {
-        isSuccess = success;
+    const success = await (0, exports.waitForSelector)(page, selector, option, async function (success) {
         if (success) {
             await page.click(selector, option);
         }
     });
-    return isSuccess;
+    return success;
 };
 exports.click = click;
 /**

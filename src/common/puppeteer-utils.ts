@@ -28,7 +28,7 @@ export interface GetListItemElementsOption {
  * @param option If mandatory is false, it will try once, and otherwise it will try by countLimit times.
  * @returns click status. If false, click is failed.
  */
-export const waitForSelector = async (page: Page, selector: string, option: WaitForSelectorOption, callback: Function) => {
+export const waitForSelector = async (page: Page, selector: string, option: WaitForSelectorOption, callback: Function) : Promise <boolean> => {
     const { mandatory = false, countLimit = 5, timeout = 1000 } = option;
     let success = false;
 
@@ -62,12 +62,10 @@ export const waitForSelector = async (page: Page, selector: string, option: Wait
         } 
     }
 
-    if (success) {
-        try {
-            await callback(success);
-        } catch (error) {
-            success = false;
-        }
+    try {
+        await callback(success);
+    } catch (error) {
+        success = false;
     }
 
     return success;
