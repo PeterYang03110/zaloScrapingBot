@@ -1,0 +1,24 @@
+Login() --- ignore ---
+getChannelsAndCommunities() => waitAndClick(selector) ;simple list --- 80% done ---
+getChannelDatas(channelId) =>
+                                getChannelAvatar(channelId)
+                                getOwnerAndAdmin(channelId)
+                                getName(channelId)
+                                downloadMedia(channelId)
+                                chatContext() => chatSubContext()
+                                                 chatTime()
+                                                 getReaction()
+                                                 
+                                
+1 login  --- done ---
+2 getChannelsAndCommunities(), waitAndClick(selector), --- 80% done ---
+                               getChannelDatas.getChannelAvatar()
+                               getOwnerAndAdmin()
+                               getName()
+3 getChannelsAndCommunities() => downloadMedia()
+4 chatContext() => chatSubContext()
+                    chatTime()
+                    getReaction()
+5 bug fix
+6 integration
+7 bug fix

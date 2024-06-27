@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    # image: telescrapbot:latest
+    ports:
+      - "3001:3001"
+    restart: always
+    volumes:
+      - ./jsonDataBase:/app/jsonDataBase
+    environment:
+      workerName: worker-01
+      msgLimit: 100
+      webHookUrl:	https://webhook.site/6308b159-63d0-4ea4-b581-e85c3c7f8d8a
+      fileCapacityLimit: 500
+      avatar: true

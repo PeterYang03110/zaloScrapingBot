@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "NodeNext",
+    "outDir": "build",
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmitHelpers": true,
+    "importHelpers": true,
+    "lib": ["es2022", "dom"],
+    "allowJs": true
+  }
+}
