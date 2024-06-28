@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getListItemElements = exports.click = exports.waitForSelector = void 0;
+exports.getListItemElements = exports.click = exports.evaluate = exports.waitForSelector = void 0;
 /**
  * Click selector div
  * @param page current page
@@ -9,7 +9,7 @@ exports.getListItemElements = exports.click = exports.waitForSelector = void 0;
  * @returns click status. If false, click is failed.
  */
 const waitForSelector = async (page, selector, option, callback) => {
-    const { mandatory = false, countLimit = 5, timeout = 1000 } = option;
+    const { mandatory = false, countLimit = 5, timeout = 10000 } = option;
     let success = false;
     if (mandatory == false) {
         try {
@@ -19,7 +19,7 @@ const waitForSelector = async (page, selector, option, callback) => {
             success = true;
         }
         catch (error) {
-            console.log(`wait for ${selector} error: `, error);
+            // console.log(`wait for ${selector} error: `, error);
             success = false;
         }
     }
@@ -36,7 +36,7 @@ const waitForSelector = async (page, selector, option, callback) => {
             catch (error) {
                 counter++;
                 if (counter >= countLimit) {
-                    console.log(`wait for ${counter} error: `, error);
+                    // console.log(`wait for ${counter} error: `, error);
                     break;
                 }
                 success = false;
@@ -44,7 +44,8 @@ const waitForSelector = async (page, selector, option, callback) => {
         }
     }
     try {
-        await callback(success);
+        if (callback)
+            await callback(success);
     }
     catch (error) {
         success = false;
@@ -52,6 +53,13 @@ const waitForSelector = async (page, selector, option, callback) => {
     return success;
 };
 exports.waitForSelector = waitForSelector;
+const evaluate = async (page, selector, option, callback) => {
+    let success = await (0, exports.waitForSelector)(page, selector, {});
+    if (!success)
+        return success;
+    // await page.evaluate()
+};
+exports.evaluate = evaluate;
 const click = async (page, selector, option) => {
     const success = await (0, exports.waitForSelector)(page, selector, option, async function (success) {
         if (success) {

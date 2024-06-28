@@ -11,14 +11,16 @@ getChannelDatas(channelId) =>
                                                  
                                 
 1 login  --- done ---
-2 getChannelsAndCommunities(), waitAndClick(selector), --- 80% done ---
-                               getChannelDatas.getChannelAvatar()
+2 getChannelsAndCommunities(), waitAndClick(selector), --- done ---
                                getOwnerAndAdmin()
-                               getName()
+                               getMembers() 
+                               getName() --- done ---
 3 getChannelsAndCommunities() => downloadMedia()
+                                 getChannelDatas.getChannelAvatar()
 4 chatContext() => chatSubContext()
                     chatTime()
                     getReaction()
-5 bug fix
+5 bug fix -> remove / from folder name
+          -> in bio -> phone number
 6 integration
 7 bug fix

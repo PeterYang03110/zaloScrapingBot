@@ -28,8 +28,8 @@ export interface GetListItemElementsOption {
  * @param option If mandatory is false, it will try once, and otherwise it will try by countLimit times.
  * @returns click status. If false, click is failed.
  */
-export const waitForSelector = async (page: Page, selector: string, option: WaitForSelectorOption, callback: Function) : Promise <boolean> => {
-    const { mandatory = false, countLimit = 5, timeout = 1000 } = option;
+export const waitForSelector = async (page: Page, selector: string, option: WaitForSelectorOption, callback?: Function) : Promise <boolean> => {
+    const { mandatory = false, countLimit = 5, timeout = 10000 } = option;
     let success = false;
 
     if (mandatory == false) {
@@ -39,7 +39,7 @@ export const waitForSelector = async (page: Page, selector: string, option: Wait
             });
             success = true;
         } catch (error) {
-            console.log(`wait for ${selector} error: `, error);
+            // console.log(`wait for ${selector} error: `, error);
             success = false;
         }
     } else {
@@ -54,7 +54,7 @@ export const waitForSelector = async (page: Page, selector: string, option: Wait
             } catch (error) {
                 counter ++;
                 if(counter >= countLimit) {
-                    console.log(`wait for ${counter} error: `, error);
+                    // console.log(`wait for ${counter} error: `, error);
                     break;
                 }
                 success = false;
@@ -63,12 +63,19 @@ export const waitForSelector = async (page: Page, selector: string, option: Wait
     }
 
     try {
-        await callback(success);
+        if(callback) await callback(success);
     } catch (error) {
         success = false;
     }
 
     return success;
+}
+
+export const evaluate = async (page: Page, selector: string, option: WaitForSelectorOption, callback: Function) : Promise <boolean | any> => {
+    let success = await waitForSelector(page, selector, {});
+    if (!success) return success;
+    
+    // await page.evaluate()
 }
 
 export const click = async (page: Page, selector: string, option: ClickOption) => {

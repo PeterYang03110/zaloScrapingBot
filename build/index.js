@@ -7,7 +7,7 @@ const getGroupAndCommunitiesInfo_1 = require("./getGroupAndCommunitiesInfo");
 async function start() {
     // Create browserInstance
     const browserInstance = await (0, new_browser_1.newBrowser)();
-    const { groupListItemInfoSelector: groupListItemSelector, } = constants_1.selectors;
+    const { groupListItemSelector, } = constants_1.selectors;
     if (browserInstance == false) {
         console.log('Failed to create page.');
         return;
@@ -18,8 +18,7 @@ async function start() {
     if (!isInitialized)
         return;
     const groupList = await (0, puppeteer_utils_1.getListItemElements)(mainPage, groupListItemSelector, { timeout: 10000 });
-    await (0, getGroupAndCommunitiesInfo_1.getGroupsAndCommunitiesInfo)(mainPage, groupList);
-    console.log(groupList.length);
+    let groupInfoList = await (0, getGroupAndCommunitiesInfo_1.getGroupsAndCommunitiesInfo)(mainPage, groupList);
 }
 // Wait for login and see group and communities.
 async function initialize(mainPage) {

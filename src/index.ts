@@ -6,12 +6,13 @@ import { click, getListItemElements } from "./common/puppeteer-utils";
 import { Browser, Page } from "puppeteer";
 import {selectors} from './constants'
 import { getGroupsAndCommunitiesInfo } from "./getGroupAndCommunitiesInfo";
+import { saveJsonFile } from "./common/media-utils";
 
 async function start() {
   // Create browserInstance
   const browserInstance = await newBrowser();
   const {
-    groupListItemInfoSelector: groupListItemSelector,
+    groupListItemSelector,
   } = selectors;
 
   if (browserInstance == false) {
@@ -25,9 +26,7 @@ async function start() {
   if (!isInitialized) return;
 
   const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
-  await getGroupsAndCommunitiesInfo(mainPage, groupList);
-
-  console.log(groupList.length);
+  let groupInfoList = await getGroupsAndCommunitiesInfo(mainPage, groupList);
 }
 
 // Wait for login and see group and communities.
