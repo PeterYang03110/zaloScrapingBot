@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const delay_1 = require("./common/delay");
 const new_browser_1 = require("./new-browser");
 const puppeteer_utils_1 = require("./common/puppeteer-utils");
 const constants_1 = require("./constants");
@@ -17,8 +18,27 @@ async function start() {
     const isInitialized = await initialize(mainPage);
     if (!isInitialized)
         return;
+    await setLanguage(mainPage, "English");
+    await (0, delay_1.delay)(1000);
     const groupList = await (0, puppeteer_utils_1.getListItemElements)(mainPage, groupListItemSelector, { timeout: 10000 });
     let groupInfoList = await (0, getGroupAndCommunitiesInfo_1.getGroupsAndCommunitiesInfo)(mainPage, groupList);
+}
+async function setLanguage(page, language) {
+    const { settingButtonSelector, settingLanguageMenuSeletor, settingLanguageItemSelectorById, } = constants_1.selectors;
+    await (0, puppeteer_utils_1.click)(page, settingButtonSelector, {});
+    await (0, delay_1.delay)(1000);
+    await (0, puppeteer_utils_1.click)(page, settingLanguageMenuSeletor, {});
+    switch (language) {
+        case "Vietnamese":
+            await (0, puppeteer_utils_1.click)(page, settingLanguageItemSelectorById(1), {});
+            break;
+        case "English":
+            await (0, puppeteer_utils_1.click)(page, settingLanguageItemSelectorById(2), {});
+            break;
+        default:
+            await (0, puppeteer_utils_1.click)(page, settingLanguageItemSelectorById(1), {});
+            break;
+    }
 }
 // Wait for login and see group and communities.
 async function initialize(mainPage) {

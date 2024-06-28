@@ -8,6 +8,8 @@ import {selectors} from './constants'
 import { getGroupsAndCommunitiesInfo } from "./getGroupAndCommunitiesInfo";
 import { saveJsonFile } from "./common/media-utils";
 
+export type Language = "English" | "Vietnamese"
+
 async function start() {
   // Create browserInstance
   const browserInstance = await newBrowser();
@@ -25,8 +27,36 @@ async function start() {
   const isInitialized = await initialize(mainPage);
   if (!isInitialized) return;
 
+  await setLanguage(mainPage, "English");
+  await delay(1000);
+
   const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
   let groupInfoList = await getGroupsAndCommunitiesInfo(mainPage, groupList);
+}
+
+async function setLanguage(page: Page, language: Language) {
+  const {
+    settingButtonSelector,
+    settingLanguageMenuSeletor,
+    settingLanguageItemSelectorById,
+  } = selectors;
+
+  await click(page, settingButtonSelector, {});
+  await delay(1000);
+  await click(page, settingLanguageMenuSeletor, {});
+  switch (language) {
+    case "Vietnamese":
+      await click(page, settingLanguageItemSelectorById(1), {});
+      break;
+
+    case "English":
+      await click(page, settingLanguageItemSelectorById(2), {});
+      break;
+  
+    default:
+      await click(page, settingLanguageItemSelectorById(1), {});
+      break;
+  }
 }
 
 // Wait for login and see group and communities.

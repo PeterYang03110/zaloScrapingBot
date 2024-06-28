@@ -1,6 +1,6 @@
 import { ElementHandle, Page } from "puppeteer";
 import { selectors, databasePath } from "./constants";
-import { click, waitForSelector } from "./common/puppeteer-utils";
+import { click, scroll, waitForSelector } from "./common/puppeteer-utils";
 import { delay } from "./common/delay";
 import { saveJsonFile } from "./common/media-utils";
 
@@ -18,10 +18,10 @@ export interface GroupInfo {
 export interface MemberInfo {
     avatar?: string,
     name: string,
-    gender?: string,
-    birthday?: string,
-    bio?: string,
-    phoneNumber?: string
+    Gender?: string,
+    Birthday?: string,
+    Bio?: string,
+    PhoneNumber?: string
 }
 
 /**
@@ -36,6 +36,7 @@ export const getGroupsAndCommunitiesInfo = async (page: Page, groups: Array< Ele
         groupListItemTitleSelectorById,
         mainTabItemSelector
     } = selectors;
+
     // first two items are not group or community.
     let index = 3, groupInfoList = [];
     for (const group of groups) {
@@ -111,7 +112,6 @@ async function getGroupOrCommunityInfo(page: Page, title: string) : Promise<Grou
     // Get MemberList
     memberList = await getMemberInfoList(page, type, memberCountSelector);
     console.log('memberList => ', memberList);
-    
 
     // Get link
     // success = await waitForSelector(page, memberCountSelector, {timeout: 2000, mandatory: true}, async function (success: boolean) {
@@ -139,13 +139,13 @@ export async function getMemberInfoList(
     memberCountSelector: string
 ) : Promise < Array<MemberInfo> > {
     const {
-        groupMemberSelectorById,
+        memberListScrollSelector,
+        groupMemberInfoListItemTitleSelectorById,
+        groupMemberInfoListItemContentSelectorById,
+        groupMemberInfoListItemContentSelector,
+        groupMemberInfoListItemTitleSelector,
         groupMemberSelector,
         groupMemberNameSelector,
-        groupMemberBioSelector,
-        groupMemberGenderSelector,
-        groupMemberBirthdaySelector,
-        groupMemberPhoneNumberSelector
     } = selectors;
     await click(page, memberCountSelector, {mandatory: true, timeout: 2000});
 
@@ -161,22 +161,49 @@ export async function getMemberInfoList(
         let success = await waitForSelector(page, groupMemberNameSelector, { timeout: 2000, mandatory: true });
         if (!success) continue;
 
-        await waitForSelector(page, groupMemberBioSelector, {});
-        await waitForSelector(page, groupMemberGenderSelector, {});
-        // if (type == 'Group') await waitForSelector(page, groupMemberPhoneNumberSelector, {});
+        // Wait for member information modal
+        success = await waitForSelector(page, groupMemberInfoListItemTitleSelector, {timeout: 2000}) 
+               && await waitForSelector(page, groupMemberInfoListItemContentSelector, {timeout: 2000});
 
-        const memberInfo: MemberInfo = await page.evaluate((nameSelector, bioSelector, genderSelector, birthdaySelector, phoneNumberSelector) => {
+        if (!success) {
+            console.log('member information modal waiting failed!');
+            continue;
+        }
+
+        const {
+            keyList = [], 
+            contentList = [], 
+            name
+        } = await page.evaluate((groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector) => {
+            let keyList = Array.from(document.querySelectorAll(groupMemberInfoListItemTitleSelector)).map((item, index) => {
+                return item.textContent || "unknown";
+            });
+
+            let contentList = Array.from(document.querySelectorAll(groupMemberInfoListItemContentSelector)).map((item, index) => {
+                return item.textContent || "undefined";
+            });
+
+            let name = document.querySelector(groupMemberNameSelector)?.textContent || 'undefined';
+            
             return {
-                name: document.querySelector(nameSelector)?.textContent || '',
-                bio: document.querySelector(bioSelector)?.textContent || '',
-                gender: document.querySelector(genderSelector)?.textContent || '',
-                birthday: document.querySelector(birthdaySelector)?.textContent || '',
-                phoneNumber: document.querySelector(phoneNumberSelector)?.textContent || ''
+                keyList,
+                contentList,
+                name
             };
-        }, groupMemberNameSelector, groupMemberBioSelector, groupMemberGenderSelector, groupMemberBirthdaySelector, groupMemberPhoneNumberSelector);
+        }, groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector);
+
+        let memberInfo: any = {name};
+        keyList.map((key, index) => {                            
+            if(typeof key == "string") memberInfo[key] = contentList[index];
+        })
+
+        console.log('test => ', memberInfo);
 
         memberInfoList.push(memberInfo);
+        await delay(300);
         await member.click(); // Close member info
+        console.log('scrolling ...');
+        await scroll(page, memberListScrollSelector, 30, "down", {timeout: 1000});
     }
 
     return memberInfoList;

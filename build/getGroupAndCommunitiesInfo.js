@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMemberInfoList = exports.getGroupsAndCommunitiesInfo = void 0;
 const constants_1 = require("./constants");
 const puppeteer_utils_1 = require("./common/puppeteer-utils");
+const delay_1 = require("./common/delay");
 const media_utils_1 = require("./common/media-utils");
 /**
  * Get information list for Groups and Communities such as members, messages ...
@@ -98,7 +99,7 @@ async function getGroupOrCommunityInfo(page, title) {
     return info;
 }
 async function getMemberInfoList(page, type, memberCountSelector) {
-    const { groupMemberSelectorById, groupMemberSelector, groupMemberNameSelector, groupMemberBioSelector, groupMemberGenderSelector, groupMemberBirthdaySelector, groupMemberPhoneNumberSelector } = constants_1.selectors;
+    const { memberListScrollSelector, groupMemberInfoListItemTitleSelectorById, groupMemberInfoListItemContentSelectorById, groupMemberInfoListItemContentSelector, groupMemberInfoListItemTitleSelector, groupMemberSelector, groupMemberNameSelector, } = constants_1.selectors;
     await (0, puppeteer_utils_1.click)(page, memberCountSelector, { mandatory: true, timeout: 2000 });
     const members = await page.$$(groupMemberSelector);
     const memberInfoList = [];
@@ -110,20 +111,38 @@ async function getMemberInfoList(page, type, memberCountSelector) {
         let success = await (0, puppeteer_utils_1.waitForSelector)(page, groupMemberNameSelector, { timeout: 2000, mandatory: true });
         if (!success)
             continue;
-        await (0, puppeteer_utils_1.waitForSelector)(page, groupMemberBioSelector, {});
-        await (0, puppeteer_utils_1.waitForSelector)(page, groupMemberGenderSelector, {});
-        // if (type == 'Group') await waitForSelector(page, groupMemberPhoneNumberSelector, {});
-        const memberInfo = await page.evaluate((nameSelector, bioSelector, genderSelector, birthdaySelector, phoneNumberSelector) => {
+        // Wait for member information modal
+        success = await (0, puppeteer_utils_1.waitForSelector)(page, groupMemberInfoListItemTitleSelector, { timeout: 2000 })
+            && await (0, puppeteer_utils_1.waitForSelector)(page, groupMemberInfoListItemContentSelector, { timeout: 2000 });
+        if (!success) {
+            console.log('member information modal waiting failed!');
+            continue;
+        }
+        const { keyList = [], contentList = [], name } = await page.evaluate((groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector) => {
+            let keyList = Array.from(document.querySelectorAll(groupMemberInfoListItemTitleSelector)).map((item, index) => {
+                return item.textContent || "unknown";
+            });
+            let contentList = Array.from(document.querySelectorAll(groupMemberInfoListItemContentSelector)).map((item, index) => {
+                return item.textContent || "undefined";
+            });
+            let name = document.querySelector(groupMemberNameSelector)?.textContent || 'undefined';
             return {
-                name: document.querySelector(nameSelector)?.textContent || '',
-                bio: document.querySelector(bioSelector)?.textContent || '',
-                gender: document.querySelector(genderSelector)?.textContent || '',
-                birthday: document.querySelector(birthdaySelector)?.textContent || '',
-                phoneNumber: document.querySelector(phoneNumberSelector)?.textContent || ''
+                keyList,
+                contentList,
+                name
             };
-        }, groupMemberNameSelector, groupMemberBioSelector, groupMemberGenderSelector, groupMemberBirthdaySelector, groupMemberPhoneNumberSelector);
+        }, groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector);
+        let memberInfo = { name };
+        keyList.map((key, index) => {
+            if (typeof key == "string")
+                memberInfo[key] = contentList[index];
+        });
+        console.log('test => ', memberInfo);
         memberInfoList.push(memberInfo);
+        await (0, delay_1.delay)(300);
         await member.click(); // Close member info
+        console.log('scrolling ...');
+        await (0, puppeteer_utils_1.scroll)(page, memberListScrollSelector, 30, "down", { timeout: 1000 });
     }
     return memberInfoList;
 }
