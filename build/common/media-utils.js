@@ -19,9 +19,11 @@ const saveJsonFile = async (path, filename, data) => {
             }
             console.log('JSON data saved to file.');
         });
+        return true;
     }
     catch (err) {
         console.log(err);
+        return false;
     }
 };
 exports.saveJsonFile = saveJsonFile;

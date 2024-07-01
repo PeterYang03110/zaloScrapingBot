@@ -53,7 +53,7 @@ export const newBrowser = async (): Promise<{browser: Browser, mainPage: Page} |
 		await mainPage.goto("https://chat.zalo.me/", {
 			waitUntil: "networkidle0"
 		});
-			
+		
 		console.log("Waiting for login, please login with camera");
 		return { browser, mainPage }
 	} catch (err) {

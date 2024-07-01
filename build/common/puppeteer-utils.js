@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scroll = exports.getListItemElements = exports.click = exports.waitForSelector = void 0;
+const delay_1 = require("./delay");
 /**
  * Click selector div
  * @param page current page
@@ -91,35 +92,42 @@ const getListItemElements = async (page, selector, option = { timeout: 3000 }) =
 };
 exports.getListItemElements = getListItemElements;
 const scroll = async (page, selector, scrollDistance, direction, option) => {
-    let scrollPos = 0;
+    let scrollPos;
     await (0, exports.waitForSelector)(page, selector, option, async function (success) {
         if (!success)
             return success;
-        scrollPos = await page.evaluate((scrollDistance, selector) => {
-            const scrollElement = document.querySelector(selector);
-            if (scrollElement)
-                switch (direction) {
-                    case "up":
-                        scrollElement.scrollTop -= scrollDistance;
-                        return scrollElement.scrollTop || -1;
-                    case "down":
-                        scrollElement.scrollTop += scrollDistance;
-                        return scrollElement.scrollTop || -1;
-                    case "left":
-                        scrollElement.scrollLeft -= scrollDistance;
-                        return scrollElement.scrollLeft || -1;
-                    case "right":
-                        scrollElement.scrollLeft += scrollDistance;
-                        return scrollElement.scrollLeft || -1;
-                    default:
-                        break;
-                }
-            else {
-                return -1;
-            }
-        }, scrollDistance, selector) || -1;
-        console.log('scrollPos => ', scrollPos);
+        console.log('scrolling...');
     });
+    scrollPos = await page.evaluate((scrollDistance, selector, direction) => {
+        const scrollElement = document.querySelector(selector);
+        return scrollElement?.scrollTop;
+        // return {
+        //     selector,
+        //     element: scrollElement
+        // };
+        // return {scrollElement, selector};
+        // if(scrollElement)
+        // switch (direction) {
+        //     case "up":
+        //         scrollElement.scrollTop -= scrollDistance;selector
+        //         return scrollElement.scrollTop || -1;
+        //     case "down":
+        //         scrollElement.scrollTop += scrollDistance;
+        //         return scrollElement.scrollTop || -1;
+        //     case "left":
+        //         scrollElement.scrollLeft -= scrollDistance;
+        //         return scrollElement.scrollLeft || -1;
+        //     case "right":
+        //         scrollElement.scrollLeft += scrollDistance;
+        //         return scrollElement.scrollLeft || -1;
+        //     default:
+        //         break;
+        // } else {
+        //     return selector;
+        // }
+    }, scrollDistance, selector, direction);
+    await (0, delay_1.delay)(1000);
+    console.log('scrolling end => ', scrollPos, await page.$$(selector));
     return scrollPos;
 };
 exports.scroll = scroll;

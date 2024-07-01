@@ -21,7 +21,7 @@ async function start() {
     console.log('Failed to create page.');
     return;
   }
-  const {browser, mainPage} = browserInstance;
+  const { mainPage } = browserInstance;
 
   // Wait for login and then see group and communities.
   const isInitialized = await initialize(mainPage);

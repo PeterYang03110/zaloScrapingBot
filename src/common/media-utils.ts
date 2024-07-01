@@ -1,7 +1,7 @@
 import fs from "fs"
 import { GroupInfo } from "../getGroupAndCommunitiesInfo";
 
-export const saveJsonFile = async (path: string, filename: string, data: GroupInfo) => {
+export const saveJsonFile = async (path: string, filename: string, data: GroupInfo) : Promise<boolean> => {
     try {
 		// Convert the data to a JSON string
 		const jsonString = JSON.stringify(data, null, 2);
@@ -19,7 +19,9 @@ export const saveJsonFile = async (path: string, filename: string, data: GroupIn
             }
             console.log('JSON data saved to file.');
         })
-	} catch (err) { console.log(err) }
+
+		return true;
+	} catch (err) { console.log(err); return false; }
 }
 
 export async function saveImage(browser: any, param: any, gid: any, sid: any) {

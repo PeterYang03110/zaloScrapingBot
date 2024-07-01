@@ -3,7 +3,6 @@ import { selectors, databasePath } from "./constants";
 import { click, scroll, waitForSelector } from "./common/puppeteer-utils";
 import { delay } from "./common/delay";
 import { saveJsonFile } from "./common/media-utils";
-
 export interface GroupInfo {
     type: string,
     name: string,
@@ -39,6 +38,7 @@ export const getGroupsAndCommunitiesInfo = async (page: Page, groups: Array< Ele
 
     // first two items are not group or community.
     let index = 3, groupInfoList = [];
+
     for (const group of groups) {
         try {
             // Get group or community title
@@ -50,14 +50,23 @@ export const getGroupsAndCommunitiesInfo = async (page: Page, groups: Array< Ele
                 }, success, groupListItemTitleSelectorById(index))
             })
 
+            console.log('---------------- Group title => ', index, title, groupListItemTitleSelectorById(index), '-----------------------');
+            
             await click(page, groupListItemSelectorById(index), {}); // Get in group
             let groupInfo = await getGroupOrCommunityInfo(page, title); // Scraping in group
-            await click(page, mainTabItemSelector, {}); // Get out group
 
+            console.log('Group Info => ', groupInfo);
+            await delay(1000);
+            
+            let success = await click(page, mainTabItemSelector, {mandatory: true, timeout: 3000}); // Get out group
+            
+            // If scraping failed, it will return boolean value
             if (typeof groupInfo == 'boolean') continue;            
+
             // Save data
-            await saveJsonFile(databasePath(groupInfo.name), groupInfo.name, groupInfo);
-            groupInfoList.push(groupInfo);
+            await saveJsonFile(databasePath(groupInfo.name), groupInfo.name, groupInfo)
+                ? groupInfoList.push(groupInfo)
+                : null
         } catch (error) {
             console.log('GetGroupsInforError => ', index, error);
             continue;
@@ -65,7 +74,6 @@ export const getGroupsAndCommunitiesInfo = async (page: Page, groups: Array< Ele
         index ++;
     }
 
-    console.log('groupInfo => ', groupInfoList);
     return groupInfoList;
 }
 
@@ -80,13 +88,13 @@ async function getGroupOrCommunityInfo(page: Page, title: string) : Promise<Grou
         groupTypeSelector,
         groupMemberCountSelector,
         communityMemberCountSelector,
-        groupMemberSelectorById,
     } = selectors;
+
     let info: GroupInfo;
     let memberCountSelector: string = "";
     let memberCount = '0';
     let type = '';
-    let memberList: Array<MemberInfo>;
+    let memberList: Array<MemberInfo> | boolean;
 
     // Get memberCountSelector
     let success = await waitForSelector(page, groupTypeSelector, {timeout: 5000}, async function(success: boolean) {       
@@ -110,7 +118,9 @@ async function getGroupOrCommunityInfo(page: Page, title: string) : Promise<Grou
     if(!success) return false;
 
     // Get MemberList
-    memberList = await getMemberInfoList(page, type, memberCountSelector);
+    memberList = await getMemberListInfo(page, type, memberCountSelector);
+    if(typeof memberList == "boolean") return false;
+
     console.log('memberList => ', memberList);
 
     // Get link
@@ -133,78 +143,117 @@ async function getGroupOrCommunityInfo(page: Page, title: string) : Promise<Grou
     return info;
 }
 
-export async function getMemberInfoList(
+export async function getMemberListInfo(
     page: Page, 
     type: string,
-    memberCountSelector: string
-) : Promise < Array<MemberInfo> > {
+    memberCountSelector: string,
+) : Promise < Array<MemberInfo> | boolean > {
     const {
-        memberListScrollSelector,
-        groupMemberInfoListItemTitleSelectorById,
-        groupMemberInfoListItemContentSelectorById,
-        groupMemberInfoListItemContentSelector,
-        groupMemberInfoListItemTitleSelector,
         groupMemberSelector,
-        groupMemberNameSelector,
     } = selectors;
-    await click(page, memberCountSelector, {mandatory: true, timeout: 2000});
+    let success = await click(page, memberCountSelector, {mandatory: true, timeout: 2000});
+    let _members: any = [];
+    await waitForSelector(page, groupMemberSelector, {mandatory: true, countLimit: 10}, async function(success: boolean) {
+        console.log(groupMemberSelector, success);
+        
+        if (!success) return false;
+        _members = await page.evaluate((memberInfoSelector: string) => {
+            const membersList = document.querySelectorAll(memberInfoSelector) || [];
+    
+            return membersList;
+        }, groupMemberSelector);
+    })
 
-    const members = await page.$$(groupMemberSelector);
+    let members = await page.$$(groupMemberSelector);
+    let prevMembers = null;
     const memberInfoList: MemberInfo[] = [];
+    
+    console.log('--------------------- member count -------------------\n', members.length);
+    while (true) {     
+        let success = await waitForSelector(page, groupMemberSelector, {})
+        if (!success) break;
 
-    for (let index = 0; index < members.length; index++) {
-        if (index < 3) continue;
-
-        const member = members[index];
-        await member.click();
-
-        let success = await waitForSelector(page, groupMemberNameSelector, { timeout: 2000, mandatory: true });
-        if (!success) continue;
-
-        // Wait for member information modal
-        success = await waitForSelector(page, groupMemberInfoListItemTitleSelector, {timeout: 2000}) 
-               && await waitForSelector(page, groupMemberInfoListItemContentSelector, {timeout: 2000});
-
-        if (!success) {
-            console.log('member information modal waiting failed!');
-            continue;
-        }
-
-        const {
-            keyList = [], 
-            contentList = [], 
-            name
-        } = await page.evaluate((groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector) => {
-            let keyList = Array.from(document.querySelectorAll(groupMemberInfoListItemTitleSelector)).map((item, index) => {
-                return item.textContent || "unknown";
-            });
-
-            let contentList = Array.from(document.querySelectorAll(groupMemberInfoListItemContentSelector)).map((item, index) => {
-                return item.textContent || "undefined";
-            });
-
-            let name = document.querySelector(groupMemberNameSelector)?.textContent || 'undefined';
+        let members = await page.$$(groupMemberSelector);
+        let memberString = JSON.stringify(members.sort());
+        
+        if (prevMembers == memberString) break;
+        
+        for (let index = 0; index < members.length; index ++) {
+            if(prevMembers == null && index < 3) continue; 
+            console.log('index => ', index);
+            // get a member
+            if (!members[index]) continue;
+            let memberInfo = await getMemberInfo(page, members[index]);
             
-            return {
-                keyList,
-                contentList,
-                name
-            };
-        }, groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector);
-
-        let memberInfo: any = {name};
-        keyList.map((key, index) => {                            
-            if(typeof key == "string") memberInfo[key] = contentList[index];
-        })
-
-        console.log('test => ', memberInfo);
-
-        memberInfoList.push(memberInfo);
-        await delay(300);
-        await member.click(); // Close member info
-        console.log('scrolling ...');
-        await scroll(page, memberListScrollSelector, 30, "down", {timeout: 1000});
+            await delay(300);
+            await members[index].click(); // Close member info    
+            if(!memberInfo) continue;
+            memberInfoList.push(memberInfo);
+        }
+        prevMembers = memberString;
     }
 
+    console.log('member scanning finished!');
     return memberInfoList;
+}
+
+export const getMemberInfo = async (page: Page, member: ElementHandle<Element>) => {
+    const {
+        groupMemberSelectorById,
+        groupMemberNameSelector,
+        groupMemberInfoListItemTitleSelector,
+        groupMemberInfoListItemContentSelector
+    } = selectors;
+    await waitForSelector(page, groupMemberSelectorById(4), {
+        mandatory: true, 
+        countLimit: 10, 
+        timeout: 1000
+    });
+    // const member = members[index];
+    await delay(500);
+    if(!member) return null;
+    await member.click();    
+
+    let success = await waitForSelector(page, groupMemberNameSelector, { timeout: 2000, mandatory: true });
+    if (!success) return null;
+
+    // Wait for member information modal
+    success = await waitForSelector(page, groupMemberInfoListItemTitleSelector, {timeout: 2000}) 
+           && await waitForSelector(page, groupMemberInfoListItemContentSelector, {timeout: 2000});
+
+    if (!success) {
+        console.log('This is you. So, I will skip!');
+        await delay(300);
+        await member.click(); // Close member info
+        return null;
+    }
+
+    const {
+        keyList = [], 
+        contentList = [], 
+        name
+    } = await page.evaluate((groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector) => {
+        let keyList = Array.from(document.querySelectorAll(groupMemberInfoListItemTitleSelector)).map((item, index) => {
+            return item.textContent || "unknown";
+        });
+
+        let contentList = Array.from(document.querySelectorAll(groupMemberInfoListItemContentSelector)).map((item, index) => {
+            return item.textContent || "undefined";
+        });
+
+        let name = document.querySelector(groupMemberNameSelector)?.textContent || 'undefined';
+        
+        return {
+            keyList,
+            contentList,
+            name
+        };
+    }, groupMemberInfoListItemTitleSelector, groupMemberInfoListItemContentSelector, groupMemberNameSelector);
+
+    let memberInfo: any = { name };
+    keyList.map((key, index) => {                            
+        if(typeof key == "string") memberInfo[key] = contentList[index];
+    })
+
+    return memberInfo;
 }

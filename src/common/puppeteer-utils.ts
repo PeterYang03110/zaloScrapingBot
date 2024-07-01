@@ -113,41 +113,47 @@ export const getListItemElements = async (page: Page, selector: string, option: 
 }
 
 export const scroll = async (page: Page, selector: string, scrollDistance: number, direction: Direction, option: WaitForSelectorOption) : Promise<number> => {
-    let scrollPos = 0;
+    let scrollPos:any;
     
     await waitForSelector(page, selector, option, async function(success: boolean) {
         if(!success) return success;
-        
-        scrollPos = await page.evaluate((scrollDistance: number, selector) => {
-            const scrollElement = document.querySelector(selector);
-
-            if(scrollElement)
-            switch (direction) {
-                case "up":
-                    scrollElement.scrollTop -= scrollDistance;
-                    return scrollElement.scrollTop || -1;
-
-                case "down":
-                    scrollElement.scrollTop += scrollDistance;
-                    return scrollElement.scrollTop || -1;
-                
-                case "left":
-                    scrollElement.scrollLeft -= scrollDistance;
-                    return scrollElement.scrollLeft || -1;
-                
-                case "right":
-                    scrollElement.scrollLeft += scrollDistance;
-                    return scrollElement.scrollLeft || -1;
-
-                default:
-                    break;
-            } else {
-                return -1;
-            }
-        }, scrollDistance, selector) || -1;
-        console.log('scrollPos => ', scrollPos);
-        
+        console.log('scrolling...');
     })
+
+    scrollPos = await page.evaluate((scrollDistance: number, selector, direction) => {
+        const scrollElement = document.querySelector(selector);
+        return scrollElement?.scrollTop;
+        // return {
+        //     selector,
+        //     element: scrollElement
+        // };
+        // return {scrollElement, selector};
+        // if(scrollElement)
+        // switch (direction) {
+        //     case "up":
+        //         scrollElement.scrollTop -= scrollDistance;selector
+        //         return scrollElement.scrollTop || -1;
+
+        //     case "down":
+        //         scrollElement.scrollTop += scrollDistance;
+        //         return scrollElement.scrollTop || -1;
+            
+        //     case "left":
+        //         scrollElement.scrollLeft -= scrollDistance;
+        //         return scrollElement.scrollLeft || -1;
+            
+        //     case "right":
+        //         scrollElement.scrollLeft += scrollDistance;
+        //         return scrollElement.scrollLeft || -1;
+
+        //     default:
+        //         break;
+        // } else {
+        //     return selector;
+        // }
+    }, scrollDistance, selector, direction);
+    await delay(1000);
+    console.log('scrolling end => ', scrollPos, await page.$$(selector));
 
     return scrollPos;
 }
