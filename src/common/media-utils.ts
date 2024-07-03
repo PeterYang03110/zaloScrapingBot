@@ -1,5 +1,8 @@
 import fs from "fs"
-import { GroupInfo } from "../getGroupAndCommunitiesInfo";
+import { GroupInfo } from "../getGroupInfo";
+import { databasePath } from "../constants";
+import { click } from "./puppeteer-utils";
+import { ElementHandle, Page } from "puppeteer";
 
 export const saveJsonFile = async (path: string, filename: string, data: GroupInfo) : Promise<boolean> => {
     try {
@@ -24,14 +27,16 @@ export const saveJsonFile = async (path: string, filename: string, data: GroupIn
 	} catch (err) { console.log(err); return false; }
 }
 
-export async function saveImage(browser: any, param: any, gid: any, sid: any) {
+export async function saveImage(browser: any, link: any, gid: any, sid: any) {
 	return new Promise(async (resolve) => {
 		const page = await browser.newPage();
 		try {
-			if (param != null) {
-				let dir = `jsonDataBase/GroupAndChannelData/${gid}/media/avatars`;
-				var viewSource = await page.goto(param);
-				await page.waitForSelector(`img[src^='blob']`);
+			if (link != null) {
+				let dir = databasePath(gid) + '/avatars';
+				var viewSource = await page.goto(link);
+				console.log('viewSource => ', await viewSource.buffer());
+				
+				await page.waitForSelector(`img`);
 				if (!fs.existsSync(dir)) {
 					fs.mkdirSync(dir, { recursive: true });
 				}
@@ -43,7 +48,41 @@ export async function saveImage(browser: any, param: any, gid: any, sid: any) {
 			}
 		}
 		catch (ex) { }
+		console.log('Image download success');
+		
 		await page.close();
 		resolve(true);
 	});
+}
+
+
+export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path: string, fileName: string) {
+	const client = await page.createCDPSession();
+	await client.send('Page.setDownloadBehavior', {
+		behavior: 'allow',
+		downloadPath: path
+	});
+
+	// Navigate to the page with the file download button or div
+
+	// Click the file download button or div
+	await fileEle.click();
+	// Wait for the file download to complete
+	// Note: Puppeteer does not have direct support for download events; we need to wait for the download file to appear in the folder
+	const filePath = path + '/' + fileName;
+	
+	// Check if the file is downloaded
+	await new Promise((resolve, reject) => {
+		const checkFile = setInterval(() => {
+		if (fs.existsSync(filePath)) {
+			clearInterval(checkFile);
+			resolve(true);
+		}
+		}, 100);
+	}).catch(err => {
+		return err;
+	});
+
+  console.log(`File downloaded to: ${filePath}`);
+
 }

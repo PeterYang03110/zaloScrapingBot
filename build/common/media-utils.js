@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveImage = exports.saveJsonFile = void 0;
+exports.saveFile = exports.saveImage = exports.saveJsonFile = void 0;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
+const constants_1 = require("../constants");
+const puppeteer_utils_1 = require("./puppeteer-utils");
 const saveJsonFile = async (path, filename, data) => {
     try {
         // Convert the data to a JSON string
@@ -27,14 +29,15 @@ const saveJsonFile = async (path, filename, data) => {
     }
 };
 exports.saveJsonFile = saveJsonFile;
-async function saveImage(browser, param, gid, sid) {
+async function saveImage(browser, link, gid, sid) {
     return new Promise(async (resolve) => {
         const page = await browser.newPage();
         try {
-            if (param != null) {
-                let dir = `jsonDataBase/GroupAndChannelData/${gid}/media/avatars`;
-                var viewSource = await page.goto(param);
-                await page.waitForSelector(`img[src^='blob']`);
+            if (link != null) {
+                let dir = (0, constants_1.databasePath)(gid) + '/avatars';
+                var viewSource = await page.goto(link);
+                console.log('viewSource => ', await viewSource.buffer());
+                await page.waitForSelector(`img`);
                 if (!fs_1.default.existsSync(dir)) {
                     fs_1.default.mkdirSync(dir, { recursive: true });
                 }
@@ -46,8 +49,35 @@ async function saveImage(browser, param, gid, sid) {
             }
         }
         catch (ex) { }
+        console.log('Image download success');
         await page.close();
         resolve(true);
     });
 }
 exports.saveImage = saveImage;
+async function saveFile(page, selector, path, fileName) {
+    const client = await page.createCDPSession();
+    await client.send('Page.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: path
+    });
+    // Navigate to the page with the file download button or div
+    // Click the file download button or div
+    await (0, puppeteer_utils_1.click)(page, selector, {});
+    // Wait for the file download to complete
+    // Note: Puppeteer does not have direct support for download events; we need to wait for the download file to appear in the folder
+    const filePath = path + '/' + fileName;
+    // Check if the file is downloaded
+    await new Promise((resolve, reject) => {
+        const checkFile = setInterval(() => {
+            if (fs_1.default.existsSync(filePath)) {
+                clearInterval(checkFile);
+                resolve(true);
+            }
+        }, 100);
+    }).catch(err => {
+        return err;
+    });
+    console.log(`File downloaded to: ${filePath}`);
+}
+exports.saveFile = saveFile;

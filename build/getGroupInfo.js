@@ -1,17 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMemberInfo = exports.getMemberListInfo = exports.downloadPicturesAndVideos = exports.getGroupsAndCommunitiesInfo = void 0;
+exports.getMemberInfo = exports.getMemberListInfo = exports.downloadLinks = exports.downloadFiles = exports.downloadPicturesAndVideos = exports.getGroupListInfo = void 0;
+const tslib_1 = require("tslib");
 const constants_1 = require("./constants");
 const puppeteer_utils_1 = require("./common/puppeteer-utils");
 const delay_1 = require("./common/delay");
 const media_utils_1 = require("./common/media-utils");
+const mediaScript_1 = tslib_1.__importDefault(require("./common/mediaScript"));
+const _1 = require(".");
+const fs_1 = tslib_1.__importDefault(require("fs"));
 /**
  * Get information list for Groups and Communities such as members, messages ...
  * @param page
  * @param groups list of Groups and Communites
  * @returns groupInfoList
  */
-const getGroupsAndCommunitiesInfo = async (page, groups) => {
+const getGroupListInfo = async (page, groups) => {
     const { groupListItemSelectorById, groupListItemTitleSelectorById, mainTabItemSelector } = constants_1.selectors;
     // first two items are not group or community.
     let index = 3, groupInfoList = [];
@@ -29,9 +33,9 @@ const getGroupsAndCommunitiesInfo = async (page, groups) => {
             });
             console.log('---------------- Group title => ', index, title, '-----------------------');
             await (0, puppeteer_utils_1.click)(page, groupListItemSelectorById(index), {}); // Get in group
-            let groupInfo = await getGroupOrCommunityInfo(page, title); // Scraping in group
+            let groupInfo = await getGroupInfo(page, title); // Scraping in group
             await (0, delay_1.delay)(1000);
-            let success = await (0, puppeteer_utils_1.click)(page, mainTabItemSelector, { mandatory: true, timeout: 3000 }); // Get out group
+            await (0, puppeteer_utils_1.click)(page, mainTabItemSelector, { mandatory: true, timeout: 3000 }); // Get out group
             // If scraping failed, it will return boolean value
             if (typeof groupInfo == 'boolean')
                 continue;
@@ -48,15 +52,15 @@ const getGroupsAndCommunitiesInfo = async (page, groups) => {
     }
     return groupInfoList;
 };
-exports.getGroupsAndCommunitiesInfo = getGroupsAndCommunitiesInfo;
+exports.getGroupListInfo = getGroupListInfo;
 /**
  * Identify whether it is group or community and then get information a specific group or community.
  * @param page
  * @param title group's title. It is difficult to get from here, so get it from outside.
  * @returns groupInfo
  */
-async function getGroupOrCommunityInfo(page, title) {
-    const { groupTypeSelector, groupMemberCountSelector, communityMemberCountSelector, groupAvatarSelector, groupLinkSelector, groupInfoToggleButtonSelector, groupMediaViewAllButtonSelector, } = constants_1.selectors;
+async function getGroupInfo(page, title) {
+    const { groupTypeSelector, groupMemberCountSelector, communityMemberCountSelector, groupAvatarSelector, groupLinkSelector, groupMemberCountBackSelector, groupMediaViewAllButtonSelector, groupImageSelector, } = constants_1.selectors;
     let info;
     let memberCountSelector = "";
     let memberCount = '0';
@@ -80,29 +84,37 @@ async function getGroupOrCommunityInfo(page, title) {
     });
     if (!success)
         return false;
-    // Get link
+    // Get Gruop link
     await (0, puppeteer_utils_1.click)(page, groupAvatarSelector, {});
     await (0, puppeteer_utils_1.waitForSelector)(page, groupLinkSelector, {});
     await (0, delay_1.delay)(2000);
     let groupLink = await page.evaluate((groupLinkSelector) => {
         return document.querySelector(groupLinkSelector)?.textContent || '';
     }, groupLinkSelector);
+    await (0, puppeteer_utils_1.waitForSelector)(page, groupImageSelector, {}, async function (success) {
+        if (!success)
+            return false;
+        let link = await page.evaluate((groupImageSelector) => {
+            return document.querySelector(groupImageSelector)?.getAttribute("src");
+        }, groupImageSelector);
+        await (0, media_utils_1.saveImage)(_1.zaloBrowser, link, title, 'Avatar');
+    });
     await (0, puppeteer_utils_1.click)(page, groupAvatarSelector, {});
-    console.log('link => ', groupLink);
-    // Get Medias
-    await (0, puppeteer_utils_1.click)(page, groupInfoToggleButtonSelector, { mandatory: true, timeout: 2000, countLimit: 3 });
-    success = await (0, puppeteer_utils_1.waitForSelector)(page, groupMediaViewAllButtonSelector, {});
-    if (success) {
-        await (0, puppeteer_utils_1.click)(page, groupMediaViewAllButtonSelector, {});
-        await downloadPicturesAndVideos(page);
-        // await downloadFilesAndVideos(page);
-        // await saveLinks(page);
-    }
     // Get MemberList
     memberList = await getMemberListInfo(page, type, memberCountSelector);
     if (typeof memberList == "boolean")
         return false;
     console.log('memberList => ', memberList.length, memberList);
+    // Get Medias, Files and Links
+    await (0, puppeteer_utils_1.click)(page, groupMemberCountBackSelector, { mandatory: true, timeout: 2000, countLimit: 3 });
+    // Determin whether Medias, Files, Links are exist or not 
+    success = await (0, puppeteer_utils_1.waitForSelector)(page, groupMediaViewAllButtonSelector, { timeout: 3000 });
+    if (success) {
+        await (0, puppeteer_utils_1.click)(page, groupMediaViewAllButtonSelector, {});
+        await downloadPicturesAndVideos(page, (0, constants_1.databasePath)(title) + '/media');
+        await downloadFiles(page, (0, constants_1.databasePath)(title) + '/files');
+        // await saveLinks(page);
+    }
     info = {
         memberCount: parseInt(memberCount),
         name: title,
@@ -112,29 +124,117 @@ async function getGroupOrCommunityInfo(page, title) {
     };
     return info;
 }
-async function downloadPicturesAndVideos(page) {
-    const { groupPhotoesAndVideosTabSelector, groupPhotoesAndVideoPreviewItemSelector, groupPhotoesAndVideoDownloadButtonSelector, } = constants_1.selectors;
+async function downloadPicturesAndVideos(page, path) {
+    const { groupPhotoesAndVideosTabSelector, groupPhotoesAndVideoPreviewItemSelector, groupPhotoesAndVideoDownloadButtonSelector, groupPhotoesAndVideoNextButtonSelector, groupPhotoesAndVideoItemSelector, } = constants_1.selectors;
+    if (!fs_1.default.existsSync(path)) {
+        fs_1.default.mkdirSync(path, { recursive: true });
+    }
+    const downloads = new Map();
+    let downloadResolvers = new Set();
+    let eofNextFlag = false;
+    const waitForDownloadCompletion = () => {
+        return new Promise(resolve => downloadResolvers.add(resolve));
+    };
+    await page.evaluate(mediaScript_1.default);
+    const client = await page.createCDPSession();
+    client.on("Browser.downloadProgress", async function (event) {
+        if (event.state === "completed") {
+            console.log('downloaded!');
+        }
+    });
+    client.on('Browser.downloadWillBegin', (event) => {
+        if (downloadResolvers.size > 0) {
+            downloads.set(event.guid, {
+                resolvers: downloadResolvers,
+                filename: event.suggestedFilename,
+            });
+            downloadResolvers = new Set();
+        }
+    });
+    client.on('Browser.downloadProgress', async (event) => {
+        const { guid } = event;
+        console.log("*** ", event.state, " ***", downloads.get(guid)?.filename);
+        if (event.state === 'completed' && downloads.has(guid)) {
+            const { resolvers, filename } = downloads.get(guid);
+            downloads.delete(guid);
+            resolvers.forEach((resolve) => resolve(filename));
+            try {
+                await page.waitForSelector(groupPhotoesAndVideoNextButtonSelector, { timeout: 10000 });
+                await page.click(groupPhotoesAndVideoNextButtonSelector);
+            }
+            catch (ex) {
+                eofNextFlag = true;
+            }
+        }
+    });
+    // Get in Media Tabs
     let success = await (0, puppeteer_utils_1.click)(page, groupPhotoesAndVideosTabSelector, {});
     if (!success)
         return null;
-    success = await (0, puppeteer_utils_1.waitForSelector)(page, groupPhotoesAndVideoPreviewItemSelector, {});
-    if (!success)
-        return null;
-    const photoEle = await page.$(groupPhotoesAndVideoPreviewItemSelector);
-    if (photoEle)
-        await photoEle.click();
-    else
-        return null;
-    success = await (0, puppeteer_utils_1.waitForSelector)(page, groupPhotoesAndVideoDownloadButtonSelector, {});
-    if (!success)
-        return null;
-    const buttonEle = await page.$(groupPhotoesAndVideoDownloadButtonSelector);
-    if (buttonEle)
-        await buttonEle.click();
-    else
-        return null;
+    await (0, delay_1.delay)(2000);
+    // Get Image list
+    await (0, puppeteer_utils_1.waitForSelector)(page, groupPhotoesAndVideoItemSelector, {});
+    let links = await page.evaluate((groupPhotoesAndVideoItemSelector) => {
+        let imgElements = document.querySelectorAll(groupPhotoesAndVideoItemSelector);
+        let links = [];
+        imgElements.forEach((imgElement, key) => {
+            if (imgElement.getAttribute("src"))
+                links.push(imgElement.getAttribute("src")?.toString());
+        });
+        return links;
+    }, groupPhotoesAndVideoItemSelector);
+    for (let i = 0; i < links.length; i++) {
+        let imageFilename = i;
+        if (links[i] == null)
+            continue;
+        await (0, media_utils_1.saveImage)(_1.zaloBrowser, links[i], path, imageFilename);
+    }
+    // Click First Image
+    // success = await waitForSelector(page, groupPhotoesAndVideoPreviewItemSelector, {});
+    // if (!success) return null;
+    // const photoEle = await page.$(groupPhotoesAndVideoPreviewItemSelector);
+    // if(photoEle) await photoEle.click();
+    // else return null;
+    // while (true) {
+    //     success = await waitForSelector(page, groupPhotoesAndVideoDownloadButtonSelector, {});
+    //     if(!success) return null;
+    //     const downloadButtonEle = await page.$(groupPhotoesAndVideoDownloadButtonSelector);
+    //     if(!downloadButtonEle) return null;
+    //     await client.send('Browser.setDownloadBehavior', {
+    //         behavior: "allow",
+    //         downloadPath: path,
+    //         eventsEnabled: true
+    //     })
+    //     const [filename] = await Promise.all([
+    //         waitForDownloadCompletion(),
+    //         await downloadButtonEle.click(),
+    //     ]);
+    //     if (eofNextFlag) break;
+    // }
 }
 exports.downloadPicturesAndVideos = downloadPicturesAndVideos;
+async function downloadFiles(page, path) {
+    const { groupFilesTabSelector, groupFileItemSelector, //define it
+    groupFileViewAllButtonSelector } = constants_1.selectors;
+    let success = await (0, puppeteer_utils_1.click)(page, groupFilesTabSelector, {});
+    if (!success)
+        return null;
+    // File search
+    success = await (0, puppeteer_utils_1.waitForSelector)(page, groupFileViewAllButtonSelector, { timeout: 5000 });
+    if (!success)
+        return null;
+    let fileViewButtonEle = await page.$(groupFileViewAllButtonSelector);
+    if (!fileViewButtonEle)
+        return null;
+    let fileName = '';
+    await fileViewButtonEle.click();
+    await (0, puppeteer_utils_1.waitForSelector)(page, groupFileItemSelector, {});
+    await (0, media_utils_1.saveFile)(page, groupFileItemSelector, path, fileName);
+}
+exports.downloadFiles = downloadFiles;
+async function downloadLinks(page, path) {
+}
+exports.downloadLinks = downloadLinks;
 async function getMemberListInfo(page, type, memberCountSelector) {
     const { groupMemberSelector, memberListScrollSelector, } = constants_1.selectors;
     await (0, puppeteer_utils_1.click)(page, memberCountSelector, { mandatory: true, timeout: 2000 });
@@ -161,7 +261,7 @@ async function getMemberListInfo(page, type, memberCountSelector) {
         if (prevMembers == memberString)
             break;
         for (let index = 0; index < memberCount; index++) {
-            if (prevMembers == null && index < 3)
+            if (prevMembers == null && ((index < 3 && type != "Group") || (index < 2 && type == "Group")))
                 continue;
             console.log('index => ', index);
             // get a member
@@ -183,9 +283,9 @@ async function getMemberListInfo(page, type, memberCountSelector) {
         if (scrollElement) {
             console.log('Scroll Height => ', scrollElement.scrollHeight);
             scrollDist = scrollElement.scrollHeight / (memberCount / 13);
-            await (0, delay_1.delay)(5000);
             console.log('scroll => ', scrollDist, scrollElement.scrollHeight);
             await (0, puppeteer_utils_1.scroll)(page, memberListScrollSelector, scrollDist, "down", {});
+            await (0, delay_1.delay)(5000);
         }
         prevMembers = memberString;
     }

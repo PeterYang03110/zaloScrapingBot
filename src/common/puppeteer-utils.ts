@@ -122,38 +122,33 @@ export const scroll = async (page: Page, selector: string, scrollDistance: numbe
 
     scrollPos = await page.evaluate((scrollDistance: number, selector, direction) => {
         const scrollElement = document.querySelector(selector);
-        return scrollElement?.scrollTop;
-        // return {
-        //     selector,
-        //     element: scrollElement
-        // };
-        // return {scrollElement, selector};
-        // if(scrollElement)
-        // switch (direction) {
-        //     case "up":
-        //         scrollElement.scrollTop -= scrollDistance;selector
-        //         return scrollElement.scrollTop || -1;
+        
+        if(scrollElement)
+        switch (direction) {
+            case "up":
+                scrollElement.scrollTop -= scrollDistance;
+                return scrollElement.scrollTop;
 
-        //     case "down":
-        //         scrollElement.scrollTop += scrollDistance;
-        //         return scrollElement.scrollTop || -1;
+            case "down":
+                scrollElement.scrollTop += scrollDistance;
+                return scrollElement.scrollTop;
             
-        //     case "left":
-        //         scrollElement.scrollLeft -= scrollDistance;
-        //         return scrollElement.scrollLeft || -1;
+            case "left":
+                scrollElement.scrollLeft -= scrollDistance;
+                return scrollElement.scrollLeft;
             
-        //     case "right":
-        //         scrollElement.scrollLeft += scrollDistance;
-        //         return scrollElement.scrollLeft || -1;
+            case "right":
+                scrollElement.scrollLeft += scrollDistance;
+                return scrollElement.scrollLeft;
 
-        //     default:
-        //         break;
-        // } else {
-        //     return selector;
-        // }
+            default:
+                break;
+        } else {
+            return selector;
+        }
     }, scrollDistance, selector, direction);
     await delay(1000);
-    console.log('scrolling end => ', scrollPos, await page.$$(selector));
+    console.log('scrolling end => ', scrollPos);
 
     return scrollPos;
 }

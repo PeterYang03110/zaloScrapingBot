@@ -2,13 +2,18 @@ import { delay } from "./common/delay";
 import { newBrowser } from "./new-browser";
 import fs from 'fs'
 import { readCookieInfo } from "./read-cookie";
-import { click, getListItemElements } from "./common/puppeteer-utils";
+import { click, getListItemElements, waitForSelector } from "./common/puppeteer-utils";
 import { Browser, Page } from "puppeteer";
 import {selectors} from './constants'
-import { getGroupsAndCommunitiesInfo } from "./getGroupAndCommunitiesInfo";
+import { getGroupListInfo } from "./getGroupInfo";
 import { saveJsonFile } from "./common/media-utils";
+import { GroupInfo } from './getGroupInfo'
 
 export type Language = "English" | "Vietnamese"
+
+export let zaloBrowser: Browser;
+export let flag = {};
+export let groupListInfo : Array<GroupInfo> = [];
 
 async function start() {
   // Create browserInstance
@@ -21,7 +26,8 @@ async function start() {
     console.log('Failed to create page.');
     return;
   }
-  const { mainPage } = browserInstance;
+  const { mainPage, browser } = browserInstance;
+  zaloBrowser = browser;
 
   // Wait for login and then see group and communities.
   const isInitialized = await initialize(mainPage);
@@ -31,7 +37,31 @@ async function start() {
   await delay(1000);
 
   const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
-  let groupInfoList = await getGroupsAndCommunitiesInfo(mainPage, groupList);
+  groupListInfo = await getGroupListInfo(mainPage, groupList, {
+    member: true,
+    groupInfo: true,
+  });
+  await realTimeMessageDetection(mainPage, groupListInfo);
+}
+
+async function realTimeMessageDetection(page: Page, groupListInfo: Array<GroupInfo>) {
+  const {
+    unreadMessageBadgeSelector,
+    groupListItemSelector
+  } = selectors;
+  return new Promise(async (resolve, reject) => {
+    setInterval(async () => {
+      let success = await waitForSelector(page, unreadMessageBadgeSelector, {});
+      if (!success) return;
+
+      const groupList = await getListItemElements(page, groupListItemSelector, {timeout: 10000});
+      let groupListInfo = await getGroupListInfo(page, groupList, {
+        media: true,
+        message: true
+      });
+    }, 3 * 60 * 1000)
+    
+  })
 }
 
 async function setLanguage(page: Page, language: Language) {
