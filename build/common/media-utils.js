@@ -70,9 +70,8 @@ async function saveImage(browser, link, path, sid, option) {
         });
         try {
             if (link != null) {
-                console.log('image link => ', link);
+                console.log('image link => ', link, path);
                 var viewSource = await page.goto(link);
-                console.log('viewSource => ', await viewSource.buffer());
                 if (option && option.blob)
                     await page.waitForSelector(`img[src^='blob']`);
                 else
@@ -81,6 +80,7 @@ async function saveImage(browser, link, path, sid, option) {
                     fs_1.default.mkdirSync(path, { recursive: true });
                 }
                 const data = fs_1.default.writeFileSync(`${path}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
+                console.log('data => ', data);
             }
         }
         catch (ex) { }
