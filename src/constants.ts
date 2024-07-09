@@ -22,7 +22,8 @@ export const selectors = {
     groupPhotoesAndVideoPreviewItemSelector: '.img-media .media-store-preview-item .common-overlay',
     groupPhotoesAndVideoDownloadButtonSelector: '#zl-modal__dialog-body > div > div > div.media-viewer__footer > div.media-viewer__footer__child.image-action > action-group:nth-child(1) > div:nth-child(2)',
     groupPhotoesAndVideoNextButtonSelector: '#zl-modal__dialog-body > div > div > div.media-viewer__body > div.media-viewer__body__left.--has-slider > div.navigatorWrapper > div > i.navBtn.fa.fa-Chevron_Up_24_Line',
-    groupPhotoesItemSelector: 'div.media-store.image-box.--render-success > div.image-box__image > img',
+    groupPhotoesItemSelector: 'div.media-store.image-box.--render-success > div.image-box__image > img[src^="blob"]',
+     
     groupVideosItemSelector: 'div.media-store.image-box.--render-success > div.image-box__image > video',
     groupFileItemSelector: '#innerScrollContainer > div', //define it,
     groupFileItemNameSelector: 'div > div.file-layout.cb-info-file-item__wrapper > div.file-layout__right-container > div.file-layout__top-container > div.cb-info-file-item__file-name.margin-bottom-4',
@@ -46,12 +47,10 @@ export const selectors = {
     
     // group page component selector
     groupTypeSelector: '#header > div.threadChat.rel.flx.flx-1.flx-al-c.group > div.threadChat__title.flx-1.flx.flx-col.w0 > div:nth-child(2) > div > div.community__chat-box-indicator > span:nth-child(1) > span.ws-no-wrap',
-
     // scroll selector
     memberListScrollSelector: '#member-group > div:nth-child(1) > div > div:nth-child(1)',
     groupListScrollSelector: '#container > div > div.card-list-wrapper > div > div:nth-child(1) > div > div:nth-child(3) > div',
     messageListScrollSelector: '#messageViewContainer > div:nth-child(1)',
-
     // settingItem selector
     settingButtonSelector: '#main-tab > div.nav__tabs__bottom > div:nth-child(4)',
     settingLanguageMenuSeletor: 'body > div.popover-v3 > div.zmenu-body.has-submenu > div > div > div-14:nth-child(6)',

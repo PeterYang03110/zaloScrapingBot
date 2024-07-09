@@ -5,6 +5,7 @@ exports.saveImage = saveImage;
 exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
+const mediaScript_1 = tslib_1.__importDefault(require("./mediaScript"));
 const getJsonFile = async (path, fileName) => {
     try {
         if (!fs_1.default.existsSync(`${path}`)) {
@@ -53,15 +54,29 @@ const saveJsonFile = async (path, fileName, data) => {
     }
 };
 exports.saveJsonFile = saveJsonFile;
-async function saveImage(browser, link, path, sid) {
+async function saveImage(browser, link, path, sid, option) {
     return new Promise(async (resolve) => {
         const page = await browser.newPage();
+        await page.evaluate(mediaScript_1.default);
+        const client = await page.createCDPSession();
+        client.on("Browser.downloadProgress", async function (event) {
+            if (event.state === "completed") {
+                console.log('downloaded => client!');
+            }
+        });
+        await client.send('Page.setDownloadBehavior', {
+            behavior: 'allow',
+            downloadPath: path,
+        });
         try {
             if (link != null) {
                 console.log('image link => ', link);
                 var viewSource = await page.goto(link);
                 console.log('viewSource => ', await viewSource.buffer());
-                await page.waitForSelector(`img`);
+                if (option && option.blob)
+                    await page.waitForSelector(`img[src^='blob']`);
+                else
+                    await page.waitForSelector(`img`);
                 if (!fs_1.default.existsSync(path)) {
                     fs_1.default.mkdirSync(path, { recursive: true });
                 }
@@ -76,15 +91,17 @@ async function saveImage(browser, link, path, sid) {
 }
 async function saveFile(page, fileEle, path, fileName) {
     const client = await page.createCDPSession();
+    client.on("Browser.downloadProgress", async function (event) {
+        if (event.state === "completed") {
+            console.log('downloaded => client!');
+        }
+    });
     await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
         downloadPath: path
     });
-    // Navigate to the page with the file download button or div
     // Click the file download button or div
     await fileEle.click();
-    // Wait for the file download to complete
-    // Note: Puppeteer does not have direct support for download events; we need to wait for the download file to appear in the folder
     const filePath = path + '/' + fileName.replace('/', ' ');
     // Check if the file is downloaded
     await new Promise((resolve, reject) => {

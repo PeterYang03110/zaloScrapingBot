@@ -35,16 +35,16 @@ export async function getGroupMemberList(
         let members = await page.$$(groupMemberSelector);
         let memberString = JSON.stringify(members.sort());
 
-        let memberCount = prevMembers == null ? 15 : 12;
+        let memberCount = prevMembers == null ? 13 : 10;
         memberCount = Math.min(members.length, memberCount);
         
         // if (prevMembers == memberString) break;
         
         for (let index = 0; index < memberCount; index ++) {
             if(prevMembers == null && ((index < 3 && type != "Group") || (index < 2 && type == "Group"))) continue; 
-            console.log('index => ', index);
             // get a member
             if (!members[index]) continue;
+            console.log('index => ', index);
             let memberInfo = await getMemberInfo(page, members[index]);
             
             await delay(300);
@@ -94,7 +94,7 @@ export const getMemberInfo = async (page: Page, member: ElementHandle<Element>) 
     if(!member) return null;
     await member.click();    
 
-    let success = await waitForSelector(page, groupMemberNameSelector, { timeout: 2000, mandatory: true });
+    let success = await waitForSelector(page, groupMemberNameSelector, { timeout: 2000, mandatory: true, countLimit: 5 });
     if (!success) return null;
 
     // Wait for member information modal

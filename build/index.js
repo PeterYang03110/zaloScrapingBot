@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.groupListInfo = exports.flag = exports.zaloBrowser = void 0;
+exports.groupListInfo = exports.flag = exports.downloadFileListFlag = exports.zaloBrowser = void 0;
 const delay_1 = require("./common/delay");
 const new_browser_1 = require("./new-browser");
 const puppeteer_utils_1 = require("./common/puppeteer-utils");
@@ -9,13 +9,14 @@ const scrapGroupList_1 = require("./scrapGroupList");
 const worker_1 = require("./worker");
 const init_1 = require("./init");
 exports.zaloBrowser = {};
+exports.downloadFileListFlag = {};
 exports.flag = {};
 exports.groupListInfo = [];
 let workers = [
     // 'groupInfo',
     // 'member',
     'media',
-    // 'message',
+    'message',
 ];
 (0, worker_1.runParallelScrapers)(workers, workers.length, function (worker) {
     switch (worker) {

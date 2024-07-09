@@ -3,6 +3,7 @@ import { GroupInfo } from "../scrapGroupList";
 import { databasePath } from "../constants";
 import { click } from "./puppeteer-utils";
 import { ElementHandle, Page } from "puppeteer";
+import mediaScript from "./mediaScript";
 
 export const getJsonFile = async (path: string, fileName: string) : Promise <any> => {
 	try {
@@ -50,9 +51,21 @@ export const saveJsonFile = async (path: string, fileName: string, data: GroupIn
 	} catch (err) { console.log(err); return false; }
 }
 
-export async function saveImage(browser: any, link: any, path: string, sid: any) {
+export async function saveImage(browser: any, link: any, path: string, sid: any, option?: any) {
+	
 	return new Promise(async (resolve) => {
 		const page = await browser.newPage();
+		await page.evaluate(mediaScript);
+		const client = await page.createCDPSession();
+		client.on("Browser.downloadProgress", async function(event: any) {
+			if (event.state === "completed") {
+				console.log('downloaded => client!');
+			}
+		})
+		await client.send('Page.setDownloadBehavior', {
+			behavior: 'allow',
+			downloadPath: path,
+		});
 		
 		try {
 			if (link != null) {
@@ -60,7 +73,8 @@ export async function saveImage(browser: any, link: any, path: string, sid: any)
 				var viewSource = await page.goto(link);
 				console.log('viewSource => ', await viewSource.buffer());
 				
-				await page.waitForSelector(`img`);
+				if(option && option.blob) await page.waitForSelector(`img[src^='blob']`);
+				else await page.waitForSelector(`img`);
 				if (!fs.existsSync(path)) {
 					fs.mkdirSync(path, { recursive: true });
 				}
@@ -78,17 +92,18 @@ export async function saveImage(browser: any, link: any, path: string, sid: any)
 
 export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path: string, fileName: string) {
 	const client = await page.createCDPSession();
+	client.on("Browser.downloadProgress", async function(event: any) {
+		if (event.state === "completed") {
+			console.log('downloaded => client!');
+		}
+	})
 	await client.send('Page.setDownloadBehavior', {
 		behavior: 'allow',
 		downloadPath: path
 	});
 
-	// Navigate to the page with the file download button or div
-
 	// Click the file download button or div
 	await fileEle.click();
-	// Wait for the file download to complete
-	// Note: Puppeteer does not have direct support for download events; we need to wait for the download file to appear in the folder
 	const filePath = path + '/' + fileName.replace('/', ' ');
 	
 	// Check if the file is downloaded

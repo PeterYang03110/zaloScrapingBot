@@ -1,7 +1,7 @@
 import { Page } from "puppeteer";
 import { click, waitForSelector } from "./common/puppeteer-utils";
 import { databasePath, selectors } from "./constants";
-import { WorkerType, zaloBrowser } from ".";
+import { WorkerType, downloadFileListFlag, zaloBrowser } from ".";
 import fs from 'fs'
 import mediaScript from "./common/mediaScript";
 import { delay } from "./common/delay";
@@ -34,10 +34,10 @@ export async function downloadMedias(page: Page, worker: WorkerType, title: stri
     for (let i = startIndex; i < 3; i ++) {
         switch (i) {
             case 0:
-                await downloadPicturesAndVideos(page, worker, databasePath(title) + '/media');
+                await downloadPicturesAndVideos(page, worker, databasePath(title) + 'media');
                 break;
             case 1:
-                await downloadFiles(page, databasePath(title) + '/files');
+                await downloadFiles(page, databasePath(title) + 'files');
                 break;
             case 2: 
                 await downloadLinks(page, databasePath(title), title);
@@ -70,7 +70,7 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
 
     client.on("Browser.downloadProgress", async function(event: any) {
         if (event.state === "completed") {
-            console.log('downloaded!');
+            console.log('downloaded => client!');
         }
     })
 
@@ -105,7 +105,11 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
     for (let i  = 0; i < links.length; i ++) {
         let imageFilename = i;
         if(links[i] == null) continue;
-        await saveImage(zaloBrowser[worker], links[i], path, imageFilename);
+
+    	const filePath = path + '/' + links[i];
+        if (downloadFileListFlag[filePath] == true) continue;
+        await saveImage(zaloBrowser[worker], links[i], path, imageFilename, {blob: true});
+        downloadFileListFlag[filePath] == true;
     }
 }
 
@@ -135,7 +139,10 @@ export async function downloadFiles(page: Page, path: string) {
             return fileEle.id.startsWith('item')
         }, fileElementList[i])
         if (!isFile) continue;
+    	const filePath = path + '/' + (fileName || i.toString()).replace('/', ' ');
+        if (downloadFileListFlag[filePath] == true) continue;
         await saveFile(page, fileElementList[i], path, fileName || i.toString());
+        downloadFileListFlag[filePath] = true;
         console.log('File download success!');
     }
 }

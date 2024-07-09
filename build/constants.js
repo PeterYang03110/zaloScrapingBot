@@ -25,7 +25,7 @@ exports.selectors = {
     groupPhotoesAndVideoPreviewItemSelector: '.img-media .media-store-preview-item .common-overlay',
     groupPhotoesAndVideoDownloadButtonSelector: '#zl-modal__dialog-body > div > div > div.media-viewer__footer > div.media-viewer__footer__child.image-action > action-group:nth-child(1) > div:nth-child(2)',
     groupPhotoesAndVideoNextButtonSelector: '#zl-modal__dialog-body > div > div > div.media-viewer__body > div.media-viewer__body__left.--has-slider > div.navigatorWrapper > div > i.navBtn.fa.fa-Chevron_Up_24_Line',
-    groupPhotoesItemSelector: 'div.media-store.image-box.--render-success > div.image-box__image > img',
+    groupPhotoesItemSelector: 'div.media-store.image-box.--render-success > div.image-box__image > img[src^="blob"]',
     groupVideosItemSelector: 'div.media-store.image-box.--render-success > div.image-box__image > video',
     groupFileItemSelector: '#innerScrollContainer > div', //define it,
     groupFileItemNameSelector: 'div > div.file-layout.cb-info-file-item__wrapper > div.file-layout__right-container > div.file-layout__top-container > div.cb-info-file-item__file-name.margin-bottom-4',

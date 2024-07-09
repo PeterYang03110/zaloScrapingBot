@@ -18,6 +18,7 @@ export interface ZaloBrowser {
 export type WorkerType = "groupInfo" | "member" | "message" | "media";
 export type Language = "English" | "Vietnamese";
 export let zaloBrowser: ZaloBrowser = {};
+export let downloadFileListFlag: any = {};
 export let flag = {};
 export let groupListInfo : Array<GroupInfo> = [];
 
@@ -25,7 +26,7 @@ let workers = [
   // 'groupInfo',
   // 'member',
   'media',
-  // 'message',
+  'message',
 ]
 
 runParallelScrapers(workers, workers.length, function(worker: string){
