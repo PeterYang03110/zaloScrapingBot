@@ -71,6 +71,4 @@ async function start(worker, option) {
         const groupList = await (0, puppeteer_utils_1.getListItemElements)(mainPage, groupListItemSelector, { timeout: 10000 });
         exports.groupListInfo = await (0, scrapGroupList_1.scrapGroupList)(mainPage, worker, groupList, option);
     }
-    // await realTimeMessageDetection(mainPage, groupListInfo);
 }
-// start()

@@ -50,21 +50,21 @@ export const saveJsonFile = async (path: string, fileName: string, data: GroupIn
 	} catch (err) { console.log(err); return false; }
 }
 
-export async function saveImage(browser: any, link: any, gid: any, sid: any) {
+export async function saveImage(browser: any, link: any, path: string, sid: any) {
 	return new Promise(async (resolve) => {
 		const page = await browser.newPage();
 		
 		try {
 			if (link != null) {
-				let dir = databasePath(gid) + '/avatars';
+				console.log('image link => ', link);
 				var viewSource = await page.goto(link);
 				console.log('viewSource => ', await viewSource.buffer());
 				
 				await page.waitForSelector(`img`);
-				if (!fs.existsSync(dir)) {
-					fs.mkdirSync(dir, { recursive: true });
+				if (!fs.existsSync(path)) {
+					fs.mkdirSync(path, { recursive: true });
 				}
-				const data = fs.writeFileSync(`${dir}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
+				const data = fs.writeFileSync(`${path}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
 			}
 		}
 		catch (ex) { }

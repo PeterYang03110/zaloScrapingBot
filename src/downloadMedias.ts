@@ -37,7 +37,7 @@ export async function downloadMedias(page: Page, worker: WorkerType, title: stri
                 await downloadPicturesAndVideos(page, worker, databasePath(title) + '/media');
                 break;
             case 1:
-                await downloadFiles(page, databasePath(title) + '/media');
+                await downloadFiles(page, databasePath(title) + '/files');
                 break;
             case 2: 
                 await downloadLinks(page, databasePath(title), title);
@@ -53,7 +53,6 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
     console.log('downloading images...');
     
     const {
-        groupPhotoesAndVideoNextButtonSelector,
         groupPhotoesItemSelector,
         groupVideosItemSelector
     } = selectors;

@@ -30,7 +30,7 @@ exports.selectors = {
     groupFileItemSelector: '#innerScrollContainer > div', //define it,
     groupFileItemNameSelector: 'div > div.file-layout.cb-info-file-item__wrapper > div.file-layout__right-container > div.file-layout__top-container > div.cb-info-file-item__file-name.margin-bottom-4',
     groupLinkItemSelector: '#innerScrollContainer > div',
-    groupLinkItemTextSelector: 'div > div.z-ml.chat-info-link__right > div.flx.flx-al-c > div.chat-info-link__subtitle.chat-info-link__group__items__subtitle',
+    groupLinkItemTextSelector: 'div > div.z-ml.chat-info-link__right > div.media-item-date.flx > div.chat-info-link__title',
     // member info selector
     groupMemberSelectorById: (id) => `#member-group > div:nth-child(1) > div > div:nth-child(1) > div > div > div:nth-child(${id}) > div`,
     groupMemberSelector: '#member-group > div:nth-child(1) > div > div:nth-child(1) > div > div > div > div',

@@ -1,6 +1,4 @@
 import fs from 'fs';
-import { Page } from 'puppeteer';
-import { click } from './puppeteer-utils';
 
 export async function saveImage(browser: any, param: any, path: string, sid: string) {
 	return new Promise(async (resolve) => {

@@ -35,7 +35,7 @@ async function getGroupInfo(page, worker, title) {
         let link = await page.evaluate((groupImageSelector) => {
             return document.querySelector(groupImageSelector)?.getAttribute("src");
         }, groupImageSelector);
-        await (0, media_utils_1.saveImage)(_1.zaloBrowser[worker], link, title, 'Avatar');
+        await (0, media_utils_1.saveImage)(_1.zaloBrowser[worker], link, (0, constants_1.databasePath)(title) + '/avatar', 'Avatar');
     });
     // Close modal
     await (0, puppeteer_utils_1.click)(page, groupAvatarSelector, {});

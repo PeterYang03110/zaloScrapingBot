@@ -46,7 +46,7 @@ export async function getGroupInfo(page: Page, worker: WorkerType, title: string
         let link = await page.evaluate((groupImageSelector) => {
             return document.querySelector(groupImageSelector)?.getAttribute("src");
         }, groupImageSelector);
-        await saveImage(zaloBrowser[worker], link, title, 'Avatar');
+        await saveImage(zaloBrowser[worker], link, databasePath(title) + '/avatar', 'Avatar');
     });
     // Close modal
     await click(page, groupAvatarSelector, {});

@@ -5,7 +5,6 @@ exports.saveImage = saveImage;
 exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
-const constants_1 = require("../constants");
 const getJsonFile = async (path, fileName) => {
     try {
         if (!fs_1.default.existsSync(`${path}`)) {
@@ -54,19 +53,19 @@ const saveJsonFile = async (path, fileName, data) => {
     }
 };
 exports.saveJsonFile = saveJsonFile;
-async function saveImage(browser, link, gid, sid) {
+async function saveImage(browser, link, path, sid) {
     return new Promise(async (resolve) => {
         const page = await browser.newPage();
         try {
             if (link != null) {
-                let dir = (0, constants_1.databasePath)(gid) + '/avatars';
+                console.log('image link => ', link);
                 var viewSource = await page.goto(link);
                 console.log('viewSource => ', await viewSource.buffer());
                 await page.waitForSelector(`img`);
-                if (!fs_1.default.existsSync(dir)) {
-                    fs_1.default.mkdirSync(dir, { recursive: true });
+                if (!fs_1.default.existsSync(path)) {
+                    fs_1.default.mkdirSync(path, { recursive: true });
                 }
-                const data = fs_1.default.writeFileSync(`${dir}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
+                const data = fs_1.default.writeFileSync(`${path}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
             }
         }
         catch (ex) { }

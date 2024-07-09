@@ -69,11 +69,8 @@ export const scrapGroupList = async (page: Page, worker: WorkerType, groups: Arr
             let success = await waitForSelector(page, groupTypeSelector, {timeout: 5000});    
             let type = success ? 'Community' : 'Group';
 
-            let _groupListInfo: Array<GroupInfo>;
             let groupInfo: GroupInfo | boolean = false;
             let groupMemberList: MemberInfo[] | boolean;
-            let groupMessages: string[];
-            let groupMediaFlags: any;
 
             if (option.groupInfo) {
                 groupInfo = await getGroupInfo(page, worker, title);
@@ -89,9 +86,7 @@ export const scrapGroupList = async (page: Page, worker: WorkerType, groups: Arr
                 console.log('Prepairing download medias...');
                 await downloadMedias(page, worker, title, type);
                 console.log('Finished download medias...');
-                // Get Medias, Files and Links
             }
-            // if (option.media) await getGroupMedia(page, title);
 
             await delay(1000);
             console.log('groupMemberList => ', title);
@@ -99,8 +94,6 @@ export const scrapGroupList = async (page: Page, worker: WorkerType, groups: Arr
             
             // If scraping failed, it will return boolean value
             if (typeof groupInfo == 'boolean' && option.groupInfo) continue;
-            
-            console.log('clicked ? => ', success);
         } catch (error) {
             console.log('GetGroupsInforError => ', index, error);
             continue;
