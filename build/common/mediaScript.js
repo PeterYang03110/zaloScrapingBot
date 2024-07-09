@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = mediaScript;
 function mediaScript() {
     const logger = {
         info: (message, fileName = null) => {
@@ -696,4 +697,3 @@ function mediaScript() {
         body.appendChild(container);
     })();
 }
-exports.default = mediaScript;

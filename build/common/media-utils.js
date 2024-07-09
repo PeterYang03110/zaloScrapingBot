@@ -1,20 +1,45 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveFile = exports.saveImage = exports.saveJsonFile = void 0;
+exports.saveJsonFile = exports.getJsonFile = void 0;
+exports.saveImage = saveImage;
+exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
 const constants_1 = require("../constants");
-const puppeteer_utils_1 = require("./puppeteer-utils");
-const saveJsonFile = async (path, filename, data) => {
+const getJsonFile = async (path, fileName) => {
+    try {
+        if (!fs_1.default.existsSync(`${path}`)) {
+            return false;
+        }
+        let data = fs_1.default.readFileSync(`${path}/${fileName}.json`, 'utf-8');
+        return JSON.parse(data);
+    }
+    catch (err) {
+        return false;
+    }
+};
+exports.getJsonFile = getJsonFile;
+const saveJsonFile = async (path, fileName, data) => {
     try {
         // Convert the data to a JSON string
-        const jsonString = JSON.stringify(data, null, 2);
+        const oldData = await (0, exports.getJsonFile)(path, fileName.replace('/', ' '));
+        console.log('old data => ', oldData);
+        let newData = {};
+        if (oldData != false) {
+            newData = {
+                ...oldData,
+                ...data
+            };
+        }
+        else
+            newData = data;
+        const jsonString = JSON.stringify(newData, null, 2);
         // If not exist, create directory
         if (!fs_1.default.existsSync(path)) {
             fs_1.default.mkdirSync(path, { recursive: true });
         }
         // Write the JSON string to a file
-        fs_1.default.writeFile(`${path}/${filename}.json`, jsonString, (err) => {
+        fs_1.default.writeFile(`${path}/${fileName.replace('/', ' ')}.json`, jsonString, (err) => {
             if (err) {
                 console.error('Error writing file:', err);
                 return;
@@ -41,11 +66,7 @@ async function saveImage(browser, link, gid, sid) {
                 if (!fs_1.default.existsSync(dir)) {
                     fs_1.default.mkdirSync(dir, { recursive: true });
                 }
-                fs_1.default.writeFile(`${dir}/${sid}.png`, await viewSource.buffer(), function (err) {
-                    if (err) {
-                        return console.log(err);
-                    }
-                });
+                const data = fs_1.default.writeFileSync(`${dir}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
             }
         }
         catch (ex) { }
@@ -54,8 +75,7 @@ async function saveImage(browser, link, gid, sid) {
         resolve(true);
     });
 }
-exports.saveImage = saveImage;
-async function saveFile(page, selector, path, fileName) {
+async function saveFile(page, fileEle, path, fileName) {
     const client = await page.createCDPSession();
     await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
@@ -63,10 +83,10 @@ async function saveFile(page, selector, path, fileName) {
     });
     // Navigate to the page with the file download button or div
     // Click the file download button or div
-    await (0, puppeteer_utils_1.click)(page, selector, {});
+    await fileEle.click();
     // Wait for the file download to complete
     // Note: Puppeteer does not have direct support for download events; we need to wait for the download file to appear in the folder
-    const filePath = path + '/' + fileName;
+    const filePath = path + '/' + fileName.replace('/', ' ');
     // Check if the file is downloaded
     await new Promise((resolve, reject) => {
         const checkFile = setInterval(() => {
@@ -80,4 +100,3 @@ async function saveFile(page, selector, path, fileName) {
     });
     console.log(`File downloaded to: ${filePath}`);
 }
-exports.saveFile = saveFile;

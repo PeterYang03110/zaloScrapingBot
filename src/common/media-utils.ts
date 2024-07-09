@@ -1,21 +1,44 @@
 import fs from "fs"
-import { GroupInfo } from "../getGroupInfo";
+import { GroupInfo } from "../scrapGroupList";
 import { databasePath } from "../constants";
 import { click } from "./puppeteer-utils";
 import { ElementHandle, Page } from "puppeteer";
 
-export const saveJsonFile = async (path: string, filename: string, data: GroupInfo) : Promise<boolean> => {
+export const getJsonFile = async (path: string, fileName: string) : Promise <any> => {
+	try {
+		if (!fs.existsSync(`${path}`)) {
+			return false;
+		} 
+
+		let data = fs.readFileSync(`${path}/${fileName}.json`, 'utf-8');
+		return JSON.parse(data);
+	} catch (err) {
+		return false;
+	}
+}
+
+export const saveJsonFile = async (path: string, fileName: string, data: GroupInfo) : Promise<boolean> => {
     try {
 		// Convert the data to a JSON string
-		const jsonString = JSON.stringify(data, null, 2);
+		const oldData = await getJsonFile(path, fileName.replace('/', ' '));
+		console.log('old data => ', oldData);
+		
+		let newData = {};
+		if(oldData != false) {
+			newData = {
+				...oldData,
+				...data
+			}
+		} else newData = data;
 
+		const jsonString = JSON.stringify(newData, null, 2);
         // If not exist, create directory
         if (!fs.existsSync(path)) {
             fs.mkdirSync(path, { recursive: true });
         }
         
         // Write the JSON string to a file
-        fs.writeFile(`${path}/${filename}.json`, jsonString, (err) => {
+        fs.writeFile(`${path}/${fileName.replace('/', ' ')}.json`, jsonString, (err) => {
             if (err) {
                 console.error('Error writing file:', err);
                 return;
@@ -30,6 +53,7 @@ export const saveJsonFile = async (path: string, filename: string, data: GroupIn
 export async function saveImage(browser: any, link: any, gid: any, sid: any) {
 	return new Promise(async (resolve) => {
 		const page = await browser.newPage();
+		
 		try {
 			if (link != null) {
 				let dir = databasePath(gid) + '/avatars';
@@ -40,11 +64,7 @@ export async function saveImage(browser: any, link: any, gid: any, sid: any) {
 				if (!fs.existsSync(dir)) {
 					fs.mkdirSync(dir, { recursive: true });
 				}
-				fs.writeFile(`${dir}/${sid}.png`, await viewSource.buffer(), function (err) {
-					if (err) {
-						return console.log(err);
-					}
-				});
+				const data = fs.writeFileSync(`${dir}/${sid.replace('/', ' ')}.png`, await viewSource.buffer());
 			}
 		}
 		catch (ex) { }
@@ -69,20 +89,19 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 	await fileEle.click();
 	// Wait for the file download to complete
 	// Note: Puppeteer does not have direct support for download events; we need to wait for the download file to appear in the folder
-	const filePath = path + '/' + fileName;
+	const filePath = path + '/' + fileName.replace('/', ' ');
 	
 	// Check if the file is downloaded
 	await new Promise((resolve, reject) => {
 		const checkFile = setInterval(() => {
-		if (fs.existsSync(filePath)) {
-			clearInterval(checkFile);
-			resolve(true);
-		}
+			if (fs.existsSync(filePath)) {
+				clearInterval(checkFile);
+				resolve(true);
+			}
 		}, 100);
 	}).catch(err => {
 		return err;
 	});
 
   console.log(`File downloaded to: ${filePath}`);
-
 }

@@ -22,7 +22,8 @@ const newBrowser = async () => {
                 // '--single-process',
                 '--disable-features=site-per-process',
                 '--disable-accelerated-2d-canvas',
-            ]
+            ],
+            // userDataDir: 'profiles/' + 'worker1'
         });
         const mainPage = (await browser.pages())[0];
         // await mainPage.setRequestInterception(true);

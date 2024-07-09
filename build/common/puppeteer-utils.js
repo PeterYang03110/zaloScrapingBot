@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scroll = exports.getListItemElements = exports.click = exports.waitForSelector = void 0;
+exports.getScroll = getScroll;
 const delay_1 = require("./delay");
 /**
  * Click selector div
@@ -126,3 +127,15 @@ const scroll = async (page, selector, scrollDistance, direction, option) => {
     return scrollPos;
 };
 exports.scroll = scroll;
+async function getScroll(page, selector, option) {
+    let scrollPos;
+    await (0, exports.waitForSelector)(page, selector, option, async function (success) {
+        if (!success)
+            return success;
+    });
+    scrollPos = await page.evaluate((selector) => {
+        const scrollElement = document.querySelector(selector);
+        return scrollElement?.scrollTop || 0;
+    }, selector);
+    return scrollPos;
+}

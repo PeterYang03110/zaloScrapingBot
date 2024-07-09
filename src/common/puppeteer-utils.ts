@@ -105,6 +105,7 @@ export const getListItemElements = async (page: Page, selector: string, option: 
         })
 
         const list = await page.$$(selector);
+        
         return list;
     } catch (error) {
         return [];
@@ -149,6 +150,21 @@ export const scroll = async (page: Page, selector: string, scrollDistance: numbe
     }, scrollDistance, selector, direction);
     await delay(1000);
     console.log('scrolling end => ', scrollPos);
+
+    return scrollPos;
+}
+
+export async function getScroll(page: Page, selector: string, option: WaitForSelectorOption) : Promise<number> {
+    let scrollPos:any;
+    
+    await waitForSelector(page, selector, option, async function(success: boolean) {
+        if(!success) return success;
+    })
+
+    scrollPos = await page.evaluate((selector: string) => {
+        const scrollElement = document.querySelector(selector);
+        return scrollElement?.scrollTop || 0;
+    }, selector);
 
     return scrollPos;
 }
