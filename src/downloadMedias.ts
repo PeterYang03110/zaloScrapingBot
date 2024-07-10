@@ -63,7 +63,6 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
 
     const downloads = new Map();
     let downloadResolvers = new Set();
-	let eofNextFlag = false;
 
     await page.evaluate(mediaScript);
     const client = await page.createCDPSession();
@@ -139,9 +138,10 @@ export async function downloadFiles(page: Page, path: string) {
             return fileEle.id.startsWith('item')
         }, fileElementList[i])
         if (!isFile) continue;
+
     	const filePath = path + '/' + (fileName || i.toString()).replace('/', ' ');
         if (downloadFileListFlag[filePath] == true) continue;
-        await saveFile(page, fileElementList[i], path, fileName || i.toString());
+        await saveFile(page, fileElementList[i], path, fileName || i.toString(), {exception: true});
         downloadFileListFlag[filePath] = true;
         console.log('File download success!');
     }

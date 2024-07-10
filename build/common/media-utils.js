@@ -5,6 +5,7 @@ exports.saveImage = saveImage;
 exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
+const constants_1 = require("../constants");
 const mediaScript_1 = tslib_1.__importDefault(require("./mediaScript"));
 const getJsonFile = async (path, fileName) => {
     try {
@@ -89,7 +90,8 @@ async function saveImage(browser, link, path, sid, option) {
         resolve(true);
     });
 }
-async function saveFile(page, fileEle, path, fileName) {
+async function saveFile(page, fileEle, path, fileName, option) {
+    const { groupFileItemDownloadIconSelector, groupFileExceptionItemDownloadIconSelector, groupFileHoverIconSelector } = constants_1.selectors;
     const client = await page.createCDPSession();
     client.on("Browser.downloadProgress", async function (event) {
         if (event.state === "completed") {
@@ -101,7 +103,28 @@ async function saveFile(page, fileEle, path, fileName) {
         downloadPath: path
     });
     // Click the file download button or div
-    await fileEle.click();
+    await fileEle.hover();
+    let count = (await fileEle.$$(groupFileHoverIconSelector)).length;
+    console.log('count => ', count);
+    if (count == 4) {
+        let success = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, { timeout: 3000 });
+        console.log(success);
+        if (success == null)
+            return;
+        let downloadIconEle = await fileEle.$(groupFileExceptionItemDownloadIconSelector);
+        if (downloadIconEle)
+            await downloadIconEle.click();
+        // await click(page, groupFileExceptionItemDownloadIconSelector, {timeout: 2000, mandatory: true})
+    }
+    else {
+        let success = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, { timeout: 3000 });
+        console.log(success);
+        if (success == null)
+            return;
+        let downloadIconEle = await fileEle.$(groupFileItemDownloadIconSelector);
+        if (downloadIconEle)
+            await downloadIconEle.click();
+    }
     const filePath = path + '/' + fileName.replace('/', ' ');
     // Check if the file is downloaded
     await new Promise((resolve, reject) => {

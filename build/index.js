@@ -16,7 +16,7 @@ let workers = [
     // 'groupInfo',
     // 'member',
     'media',
-    'message',
+    // 'message',
 ];
 (0, worker_1.runParallelScrapers)(workers, workers.length, function (worker) {
     switch (worker) {

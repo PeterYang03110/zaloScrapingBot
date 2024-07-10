@@ -5,6 +5,20 @@ const tslib_1 = require("tslib");
 const puppeteer_extra_1 = tslib_1.__importDefault(require("puppeteer-extra"));
 const puppeteer_extra_plugin_stealth_1 = tslib_1.__importDefault(require("puppeteer-extra-plugin-stealth"));
 puppeteer_extra_1.default.use((0, puppeteer_extra_plugin_stealth_1.default)());
+// puppeteer.use(require('puppeteer-extra-plugin-user-preferences')({
+// 	userPrefs: {
+// 		download: {
+// 			prompt_for_download: false,
+// 			directory_upgrade: true,
+// 			default_directory:  path.join(`${process.cwd()}`, 'downloadFolder'),
+// 			extensions_to_open: "applications/pdf",
+// 		},
+// 		plugins: {
+// 			always_open_pdf_externally: true,
+// 			plugins_disabled: ["Chrome PDF Viewer"],
+// 		},
+// 	}
+// }));
 const newBrowser = async () => {
     try {
         console.log('Creating new page...');

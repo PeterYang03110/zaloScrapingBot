@@ -1,9 +1,10 @@
 import fs from "fs"
 import { GroupInfo } from "../scrapGroupList";
-import { databasePath } from "../constants";
-import { click } from "./puppeteer-utils";
+import { databasePath, selectors } from "../constants";
+import { click, waitForSelector } from "./puppeteer-utils";
 import { ElementHandle, Page } from "puppeteer";
 import mediaScript from "./mediaScript";
+import { delay } from "./delay";
 
 export const getJsonFile = async (path: string, fileName: string) : Promise <any> => {
 	try {
@@ -90,7 +91,12 @@ export async function saveImage(browser: any, link: any, path: string, sid: any,
 }
 
 
-export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path: string, fileName: string) {
+export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path: string, fileName: string, option?: any) {
+	const {
+		groupFileItemDownloadIconSelector,
+		groupFileExceptionItemDownloadIconSelector,
+		groupFileHoverIconSelector
+	} = selectors;
 	const client = await page.createCDPSession();
 	client.on("Browser.downloadProgress", async function(event: any) {
 		if (event.state === "completed") {
@@ -103,7 +109,26 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 	});
 
 	// Click the file download button or div
-	await fileEle.click();
+	await fileEle.hover();
+	let count = (await fileEle.$$(groupFileHoverIconSelector)).length;
+	console.log('count => ', count);
+	if (count == 4) {
+		let success = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, {timeout: 3000})
+		console.log(success);
+		
+		if (success == null) return;
+		
+		let downloadIconEle = await fileEle.$(groupFileExceptionItemDownloadIconSelector);
+		if(downloadIconEle) await downloadIconEle.click();
+		// await click(page, groupFileExceptionItemDownloadIconSelector, {timeout: 2000, mandatory: true})
+	} else {
+		let success = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, {timeout: 3000})
+		console.log(success);
+		if (success == null) return;
+		
+		let downloadIconEle = await fileEle.$(groupFileItemDownloadIconSelector);
+		if(downloadIconEle) await downloadIconEle.click();
+	}
 	const filePath = path + '/' + fileName.replace('/', ' ');
 	
 	// Check if the file is downloaded

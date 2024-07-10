@@ -2,8 +2,23 @@ import puppeteer from 'puppeteer-extra';
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import {Page, Browser} from 'puppeteer'
 import { delay } from './common/delay';
+import path from 'path';
 
 puppeteer.use(StealthPlugin());
+// puppeteer.use(require('puppeteer-extra-plugin-user-preferences')({
+// 	userPrefs: {
+// 		download: {
+// 			prompt_for_download: false,
+// 			directory_upgrade: true,
+// 			default_directory:  path.join(`${process.cwd()}`, 'downloadFolder'),
+// 			extensions_to_open: "applications/pdf",
+// 		},
+// 		plugins: {
+// 			always_open_pdf_externally: true,
+// 			plugins_disabled: ["Chrome PDF Viewer"],
+// 		},
+// 	}
+// }));
 export const newBrowser = async (): Promise<{browser: Browser, mainPage: Page} | false> => {
 	try {
 		console.log('Creating new page...');

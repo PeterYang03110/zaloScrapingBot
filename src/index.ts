@@ -26,7 +26,7 @@ let workers = [
   // 'groupInfo',
   // 'member',
   'media',
-  'message',
+  // 'message',
 ]
 
 runParallelScrapers(workers, workers.length, function(worker: string){
