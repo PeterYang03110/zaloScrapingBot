@@ -23,7 +23,6 @@ export const saveJsonFile = async (path: string, fileName: string, data: GroupIn
     try {
 		// Convert the data to a JSON string
 		const oldData = await getJsonFile(path, fileName.replace('/', ' '));
-		console.log('old data => ', oldData);
 		
 		let newData = {};
 		if(oldData != false) {
@@ -99,40 +98,59 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 	} = selectors;
 	const client = await page.createCDPSession();
 	client.on("Browser.downloadProgress", async function(event: any) {
+		console.log('*** ', event.state, '***');
+		
 		if (event.state === "completed") {
 			console.log('downloaded => client!');
 		}
 	})
 	await client.send('Page.setDownloadBehavior', {
 		behavior: 'allow',
-		downloadPath: path
+		downloadPath: path,
 	});
 
 	// Click the file download button or div
 	await fileEle.hover();
+	await delay(2000);
 	let count = (await fileEle.$$(groupFileHoverIconSelector)).length;
-	console.log('count => ', count);
+
 	if (count == 4) {
-		let success = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, {timeout: 3000})
-		console.log(success);
+		let downloadIconEle = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, {timeout: 3000})
 		
-		if (success == null) return;
-		
-		let downloadIconEle = await fileEle.$(groupFileExceptionItemDownloadIconSelector);
-		if(downloadIconEle) await downloadIconEle.click();
-		// await click(page, groupFileExceptionItemDownloadIconSelector, {timeout: 2000, mandatory: true})
+		if(downloadIconEle) {
+			try {
+				await downloadIconEle.click();
+				console.log('clicked 4');
+			} catch (error) {
+				console.log('clicked 4 error: ', error);
+			}
+		}
 	} else {
-		let success = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, {timeout: 3000})
-		console.log(success);
-		if (success == null) return;
-		
-		let downloadIconEle = await fileEle.$(groupFileItemDownloadIconSelector);
-		if(downloadIconEle) await downloadIconEle.click();
+		let downloadIconEle = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, {timeout: 3000})
+
+		if(downloadIconEle) {
+			try {
+				await downloadIconEle.click();
+				console.log('clicked 4');
+			} catch (error) {
+				console.log('clicked 4 error: ', error);
+			}
+		}
 	}
-	const filePath = path + '/' + fileName.replace('/', ' ');
+
+	await delay(1000);
+	const filePath = path + '/' + fileName;
+	console.log('File path => ' ,filePath);
 	
 	// Check if the file is downloaded
+	while (!fs.existsSync(filePath)) {
+		console.log('downloading...', filePath, fs.existsSync(filePath));
+		await new Promise(resolve => setTimeout(resolve, 500));
+	}
+
 	await new Promise((resolve, reject) => {
+		console.log('downloading...');
+		
 		const checkFile = setInterval(() => {
 			if (fs.existsSync(filePath)) {
 				clearInterval(checkFile);
@@ -143,5 +161,5 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 		return err;
 	});
 
-  console.log(`File downloaded to: ${filePath}`);
+  	console.log(`File downloaded to: ${filePath}`);
 }

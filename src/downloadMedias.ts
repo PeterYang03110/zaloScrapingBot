@@ -68,6 +68,8 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
     const client = await page.createCDPSession();
 
     client.on("Browser.downloadProgress", async function(event: any) {
+        console.log('downloading... ', event.state);
+        
         if (event.state === "completed") {
             console.log('downloaded => client!');
         }

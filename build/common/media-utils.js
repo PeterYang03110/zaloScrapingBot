@@ -7,6 +7,7 @@ const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
 const constants_1 = require("../constants");
 const mediaScript_1 = tslib_1.__importDefault(require("./mediaScript"));
+const delay_1 = require("./delay");
 const getJsonFile = async (path, fileName) => {
     try {
         if (!fs_1.default.existsSync(`${path}`)) {
@@ -24,7 +25,6 @@ const saveJsonFile = async (path, fileName, data) => {
     try {
         // Convert the data to a JSON string
         const oldData = await (0, exports.getJsonFile)(path, fileName.replace('/', ' '));
-        console.log('old data => ', oldData);
         let newData = {};
         if (oldData != false) {
             newData = {
@@ -94,40 +94,63 @@ async function saveFile(page, fileEle, path, fileName, option) {
     const { groupFileItemDownloadIconSelector, groupFileExceptionItemDownloadIconSelector, groupFileHoverIconSelector } = constants_1.selectors;
     const client = await page.createCDPSession();
     client.on("Browser.downloadProgress", async function (event) {
+        console.log('*** ', event.state, '***');
         if (event.state === "completed") {
             console.log('downloaded => client!');
         }
     });
     await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
-        downloadPath: path
+        downloadPath: path,
     });
     // Click the file download button or div
     await fileEle.hover();
+    await (0, delay_1.delay)(2000);
     let count = (await fileEle.$$(groupFileHoverIconSelector)).length;
     console.log('count => ', count);
+    // await fileEle.click();
+    // await delay(2000);
     if (count == 4) {
-        let success = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, { timeout: 3000 });
-        console.log(success);
-        if (success == null)
-            return;
-        let downloadIconEle = await fileEle.$(groupFileExceptionItemDownloadIconSelector);
-        if (downloadIconEle)
-            await downloadIconEle.click();
-        // await click(page, groupFileExceptionItemDownloadIconSelector, {timeout: 2000, mandatory: true})
+        let downloadIconEle = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, { timeout: 3000 });
+        // if (downloadIconEle == null) return;
+        // 	let downloadIconEle = await fileEle.$(groupFileExceptionItemDownloadIconSelector);
+        // 	console.log('', downloadIconEle);
+        if (downloadIconEle) {
+            try {
+                await downloadIconEle.click();
+                console.log('clicked 4');
+            }
+            catch (error) {
+                console.log('clicked 4 error: ', error);
+            }
+        }
+        // 	// await click(page, groupFileExceptionItemDownloadIconSelector, {timeout: 2000, mandatory: true})
     }
     else {
-        let success = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, { timeout: 3000 });
-        console.log(success);
-        if (success == null)
-            return;
-        let downloadIconEle = await fileEle.$(groupFileItemDownloadIconSelector);
-        if (downloadIconEle)
-            await downloadIconEle.click();
+        let downloadIconEle = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, { timeout: 3000 });
+        // console.log(success);
+        // if (success == null) return;
+        // 	let downloadIconEle = await fileEle.$(groupFileItemDownloadIconSelector);
+        if (downloadIconEle) {
+            try {
+                await downloadIconEle.click();
+                console.log('clicked 4');
+            }
+            catch (error) {
+                console.log('clicked 4 error: ', error);
+            }
+        }
     }
-    const filePath = path + '/' + fileName.replace('/', ' ');
+    await (0, delay_1.delay)(1000);
+    const filePath = path + '/' + fileName;
+    console.log('File path => ', filePath);
     // Check if the file is downloaded
+    while (!fs_1.default.existsSync(filePath)) {
+        console.log('downloading...', filePath, fs_1.default.existsSync(filePath));
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
     await new Promise((resolve, reject) => {
+        console.log('downloading...');
         const checkFile = setInterval(() => {
             if (fs_1.default.existsSync(filePath)) {
                 clearInterval(checkFile);
