@@ -23,10 +23,10 @@ export let flag = {};
 export let groupListInfo : Array<GroupInfo> = [];
 
 let workers = [
-  // 'groupInfo',
-  // 'member',
+  'groupInfo',
+  'member',
   'media',
-  // 'message',
+  'message',
 ]
 
 runParallelScrapers(workers, workers.length, function(worker: string){

@@ -54,3 +54,13 @@ docker compose up
 ```shell
 docker compose down
 ```
+
+## to change workers, please check index.ts
+```typescript
+let workers = [
+  'groupInfo', // worker for getting group info
+  'member', // worker for getting group members
+  'media', // worker for download medias
+  'message', // workder for get messages
+]
+```
