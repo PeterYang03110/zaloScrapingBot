@@ -21,15 +21,19 @@ const getJsonFile = async (path, fileName) => {
     }
 };
 exports.getJsonFile = getJsonFile;
-const saveJsonFile = async (path, fileName, data) => {
+const saveJsonFile = async (path, fileName, data, option) => {
     try {
         // Convert the data to a JSON string
         const oldData = await (0, exports.getJsonFile)(path, fileName.replace('/', ' '));
-        let newData = {};
+        let newData = data;
         if (oldData != false) {
+            if (oldData.contents && oldData.contents.length)
+                newData.contents = [...(newData.contents || []), ...oldData.contents];
+            if (oldData.links && oldData.links.length)
+                newData.links = [...(newData.links || []), ...oldData.links];
             newData = {
                 ...oldData,
-                ...data
+                ...newData
             };
         }
         else
@@ -107,14 +111,8 @@ async function saveFile(page, fileEle, path, fileName, option) {
     await fileEle.hover();
     await (0, delay_1.delay)(2000);
     let count = (await fileEle.$$(groupFileHoverIconSelector)).length;
-    console.log('count => ', count);
-    // await fileEle.click();
-    // await delay(2000);
     if (count == 4) {
         let downloadIconEle = await fileEle.waitForSelector(groupFileExceptionItemDownloadIconSelector, { timeout: 3000 });
-        // if (downloadIconEle == null) return;
-        // 	let downloadIconEle = await fileEle.$(groupFileExceptionItemDownloadIconSelector);
-        // 	console.log('', downloadIconEle);
         if (downloadIconEle) {
             try {
                 await downloadIconEle.click();
@@ -124,13 +122,9 @@ async function saveFile(page, fileEle, path, fileName, option) {
                 console.log('clicked 4 error: ', error);
             }
         }
-        // 	// await click(page, groupFileExceptionItemDownloadIconSelector, {timeout: 2000, mandatory: true})
     }
     else {
         let downloadIconEle = await fileEle.waitForSelector(groupFileItemDownloadIconSelector, { timeout: 3000 });
-        // console.log(success);
-        // if (success == null) return;
-        // 	let downloadIconEle = await fileEle.$(groupFileItemDownloadIconSelector);
         if (downloadIconEle) {
             try {
                 await downloadIconEle.click();
@@ -145,14 +139,19 @@ async function saveFile(page, fileEle, path, fileName, option) {
     const filePath = path + '/' + fileName;
     console.log('File path => ', filePath);
     // Check if the file is downloaded
-    while (!fs_1.default.existsSync(filePath)) {
-        console.log('downloading...', filePath, fs_1.default.existsSync(filePath));
-        await new Promise(resolve => setTimeout(resolve, 500));
+    while (true) {
+        if (isExistFile(path, fileName)) {
+            break;
+        }
+        else {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            console.log('downloading...', filePath, fs_1.default.existsSync(filePath));
+        }
     }
     await new Promise((resolve, reject) => {
         console.log('downloading...');
-        const checkFile = setInterval(() => {
-            if (fs_1.default.existsSync(filePath)) {
+        const checkFile = setInterval(async () => {
+            if (isExistFile(path, fileName)) {
                 clearInterval(checkFile);
                 resolve(true);
             }
@@ -161,4 +160,15 @@ async function saveFile(page, fileEle, path, fileName, option) {
         return err;
     });
     console.log(`File downloaded to: ${filePath}`);
+}
+function isExistFile(path, fileName) {
+    const files = fs_1.default.readdirSync(path);
+    const downloadedFile = files.filter((file) => {
+        console.log(file.trim(), fileName.replace(' ', ' '));
+        return file.trim() == fileName.replace(' ', ' ').trim();
+    }); // Adjust the condition
+    console.log('Files => ', downloadedFile);
+    if (downloadedFile.length)
+        return true;
+    return false;
 }

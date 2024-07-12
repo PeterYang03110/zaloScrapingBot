@@ -19,16 +19,19 @@ export const getJsonFile = async (path: string, fileName: string) : Promise <any
 	}
 }
 
-export const saveJsonFile = async (path: string, fileName: string, data: GroupInfo) : Promise<boolean> => {
+export const saveJsonFile = async (path: string, fileName: string, data: GroupInfo, option?: any) : Promise<boolean> => {
     try {
 		// Convert the data to a JSON string
 		const oldData = await getJsonFile(path, fileName.replace('/', ' '));
 		
-		let newData = {};
+		let newData = data;
 		if(oldData != false) {
+			if(oldData.contents && oldData.contents.length) newData.contents = [...(newData.contents || []), ...oldData.contents]
+			if(oldData.links && oldData.links.length) newData.links = [...(newData.links || []), ...oldData.links]
+
 			newData = {
 				...oldData,
-				...data
+				...newData
 			}
 		} else newData = data;
 
@@ -143,16 +146,20 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 	console.log('File path => ' ,filePath);
 	
 	// Check if the file is downloaded
-	while (!fs.existsSync(filePath)) {
-		console.log('downloading...', filePath, fs.existsSync(filePath));
-		await new Promise(resolve => setTimeout(resolve, 500));
+	while (true) {
+		if(isExistFile(path, fileName)) {
+			break;
+		} else {
+			await new Promise(resolve => setTimeout(resolve, 500));
+			console.log('downloading...', filePath, fs.existsSync(filePath));
+		}
 	}
 
 	await new Promise((resolve, reject) => {
 		console.log('downloading...');
 		
-		const checkFile = setInterval(() => {
-			if (fs.existsSync(filePath)) {
+		const checkFile = setInterval(async () => {
+			if(isExistFile(path, fileName)) {
 				clearInterval(checkFile);
 				resolve(true);
 			}
@@ -162,4 +169,17 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 	});
 
   	console.log(`File downloaded to: ${filePath}`);
+}
+
+function isExistFile(path: string, fileName: string) {
+	const files = fs.readdirSync(path);
+	
+    const downloadedFile = files.filter((file) => {
+		console.log(file.trim(), fileName.replace(' ', ' '));
+		return file.trim() == fileName.replace(' ', ' ').trim()
+	}); // Adjust the condition
+
+	console.log('Files => ', downloadedFile);
+	if (downloadedFile.length) return true;
+	return false;
 }
