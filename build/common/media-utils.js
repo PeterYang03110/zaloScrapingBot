@@ -2,12 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.saveJsonFile = exports.getJsonFile = void 0;
 exports.saveImage = saveImage;
+exports.downloadBlobImage = downloadBlobImage;
 exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
 const constants_1 = require("../constants");
 const mediaScript_1 = tslib_1.__importDefault(require("./mediaScript"));
 const delay_1 = require("./delay");
+const calcDate_1 = require("./calcDate");
 const getJsonFile = async (path, fileName) => {
     try {
         if (!fs_1.default.existsSync(`${path}`)) {
@@ -27,8 +29,14 @@ const saveJsonFile = async (path, fileName, data, option) => {
         const oldData = await (0, exports.getJsonFile)(path, fileName.replace('/', ' '));
         let newData = data;
         if (oldData != false) {
-            if (oldData.contents && oldData.contents.length)
-                newData.contents = [...(newData.contents || []), ...oldData.contents];
+            if (oldData.contents && oldData.contents.length) {
+                let lastDate = (0, calcDate_1.convertStringToDateTime)(oldData.contents[0].date);
+                let newContents = newData.contents?.filter(content => {
+                    return (0, calcDate_1.convertStringToDateTime)(content.date) > lastDate;
+                });
+                console.log('new contents => ', newContents);
+                newData.contents = [...(newContents || []), ...oldData.contents];
+            }
             if (oldData.links && oldData.links.length)
                 newData.links = [...(newData.links || []), ...oldData.links];
             newData = {
@@ -94,6 +102,22 @@ async function saveImage(browser, link, path, sid, option) {
         resolve(true);
     });
 }
+async function downloadBlobImage(page, blobUrl, filename) {
+    await page.waitForSelector(`img[src^='blob']`);
+    await page.evaluate(() => {
+        // Create an anchor element
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        // Append the anchor to the body
+        document.body.appendChild(a);
+        // Trigger a click event on the anchor
+        a.click();
+        // Remove the anchor from the body
+        document.body.removeChild(a);
+    });
+    console.log('Blob image download success!');
+}
 async function saveFile(page, fileEle, path, fileName, option) {
     const { groupFileItemDownloadIconSelector, groupFileExceptionItemDownloadIconSelector, groupFileHoverIconSelector } = constants_1.selectors;
     const client = await page.createCDPSession();
@@ -149,7 +173,6 @@ async function saveFile(page, fileEle, path, fileName, option) {
         }
     }
     await new Promise((resolve, reject) => {
-        console.log('downloading...');
         const checkFile = setInterval(async () => {
             if (isExistFile(path, fileName)) {
                 clearInterval(checkFile);
@@ -167,7 +190,6 @@ function isExistFile(path, fileName) {
         console.log(file.trim(), fileName.replace(' ', ' '));
         return file.trim() == fileName.replace(' ', ' ').trim();
     }); // Adjust the condition
-    console.log('Files => ', downloadedFile);
     if (downloadedFile.length)
         return true;
     return false;

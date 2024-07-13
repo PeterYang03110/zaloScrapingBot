@@ -119,5 +119,13 @@ export function stringToDate(dateString: string) {
 	}
 }
   
-  
-  
+export function convertStringToDateTime(dateTimeString: string) {
+	// ex: "2024-07-10 12:28";
+
+	// Replace the space with 'T' to make it ISO 8601 compliant
+	const isoDateTimeString = dateTimeString.replace(" ", "T");
+
+	// Create a new Date object
+	const date = new Date(isoDateTimeString);
+	return date;
+}

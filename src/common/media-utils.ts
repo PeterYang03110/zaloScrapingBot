@@ -5,6 +5,7 @@ import { click, waitForSelector } from "./puppeteer-utils";
 import { ElementHandle, Page } from "puppeteer";
 import mediaScript from "./mediaScript";
 import { delay } from "./delay";
+import { convertStringToDateTime } from "./calcDate";
 
 export const getJsonFile = async (path: string, fileName: string) : Promise <any> => {
 	try {
@@ -26,7 +27,16 @@ export const saveJsonFile = async (path: string, fileName: string, data: GroupIn
 		
 		let newData = data;
 		if(oldData != false) {
-			if(oldData.contents && oldData.contents.length) newData.contents = [...(newData.contents || []), ...oldData.contents]
+			if(oldData.contents && oldData.contents.length) {
+				let lastDate = convertStringToDateTime(oldData.contents[0].date);
+				
+				let newContents = newData.contents?.filter(content => {					
+					return convertStringToDateTime(content.date) > lastDate
+				})
+				console.log('new contents => ', newContents);
+				
+				newData.contents = [...(newContents || []), ...oldData.contents]
+			}
 			if(oldData.links && oldData.links.length) newData.links = [...(newData.links || []), ...oldData.links]
 
 			newData = {
@@ -92,7 +102,6 @@ export async function saveImage(browser: any, link: any, path: string, sid: any,
 	});
 }
 
-
 export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path: string, fileName: string, option?: any) {
 	const {
 		groupFileItemDownloadIconSelector,
@@ -111,6 +120,10 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 		behavior: 'allow',
 		downloadPath: path,
 	});
+	
+	if (!fs.existsSync(path)) {
+		fs.mkdirSync(path, { recursive: true });
+	}
 
 	// Click the file download button or div
 	await fileEle.hover();
@@ -155,9 +168,7 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 		}
 	}
 
-	await new Promise((resolve, reject) => {
-		console.log('downloading...');
-		
+	await new Promise((resolve, reject) => {		
 		const checkFile = setInterval(async () => {
 			if(isExistFile(path, fileName)) {
 				clearInterval(checkFile);
@@ -179,7 +190,6 @@ function isExistFile(path: string, fileName: string) {
 		return file.trim() == fileName.replace(' ', ' ').trim()
 	}); // Adjust the condition
 
-	console.log('Files => ', downloadedFile);
 	if (downloadedFile.length) return true;
 	return false;
 }

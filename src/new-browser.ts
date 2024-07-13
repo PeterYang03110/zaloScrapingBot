@@ -5,20 +5,7 @@ import { delay } from './common/delay';
 import path from 'path';
 
 puppeteer.use(StealthPlugin());
-// puppeteer.use(require('puppeteer-extra-plugin-user-preferences')({
-// 	userPrefs: {
-// 		download: {
-// 			prompt_for_download: false,
-// 			directory_upgrade: true,
-// 			default_directory:  path.join(`${process.cwd()}`, 'downloadFolder'),
-// 			extensions_to_open: "applications/pdf",
-// 		},
-// 		plugins: {
-// 			always_open_pdf_externally: true,
-// 			plugins_disabled: ["Chrome PDF Viewer"],
-// 		},
-// 	}
-// }));
+
 export const newBrowser = async (): Promise<{browser: Browser, mainPage: Page} | false> => {
 	try {
 		console.log('Creating new page...');
@@ -38,19 +25,8 @@ export const newBrowser = async (): Promise<{browser: Browser, mainPage: Page} |
 				'--disable-features=site-per-process',
 				'--disable-accelerated-2d-canvas',
 			],
-			// userDataDir: 'profiles/' + 'worker1'
 		});
 		const mainPage = (await browser.pages())[0];
-
-		// await mainPage.setRequestInterception(true);
-		// mainPage.on("request", (request) => {
-		// 	console.log(request.resourceType());
-		// 	if (request.resourceType() === "font") {
-		// 		request.abort();
-		// 	} else {
-		// 		request.continue();
-		// 	}
-		// });
 
 		await mainPage.evaluate(() => {
 			Object.defineProperty(navigator, 'webdriver', { get: () => false });
@@ -65,12 +41,12 @@ export const newBrowser = async (): Promise<{browser: Browser, mainPage: Page} |
 		});
 
 		mainPage.setDefaultTimeout(0);
+		console.log("Waiting for login, please login with camera");
 		
 		await mainPage.goto("https://chat.zalo.me/", {
 			waitUntil: "networkidle0"
 		});
 		
-		console.log("Waiting for login, please login with camera");
 		return { browser, mainPage }
 	} catch (err) {
 		console.log("err => ", err);

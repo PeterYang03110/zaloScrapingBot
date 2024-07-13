@@ -5,20 +5,6 @@ const tslib_1 = require("tslib");
 const puppeteer_extra_1 = tslib_1.__importDefault(require("puppeteer-extra"));
 const puppeteer_extra_plugin_stealth_1 = tslib_1.__importDefault(require("puppeteer-extra-plugin-stealth"));
 puppeteer_extra_1.default.use((0, puppeteer_extra_plugin_stealth_1.default)());
-// puppeteer.use(require('puppeteer-extra-plugin-user-preferences')({
-// 	userPrefs: {
-// 		download: {
-// 			prompt_for_download: false,
-// 			directory_upgrade: true,
-// 			default_directory:  path.join(`${process.cwd()}`, 'downloadFolder'),
-// 			extensions_to_open: "applications/pdf",
-// 		},
-// 		plugins: {
-// 			always_open_pdf_externally: true,
-// 			plugins_disabled: ["Chrome PDF Viewer"],
-// 		},
-// 	}
-// }));
 const newBrowser = async () => {
     try {
         console.log('Creating new page...');
@@ -37,18 +23,8 @@ const newBrowser = async () => {
                 '--disable-features=site-per-process',
                 '--disable-accelerated-2d-canvas',
             ],
-            // userDataDir: 'profiles/' + 'worker1'
         });
         const mainPage = (await browser.pages())[0];
-        // await mainPage.setRequestInterception(true);
-        // mainPage.on("request", (request) => {
-        // 	console.log(request.resourceType());
-        // 	if (request.resourceType() === "font") {
-        // 		request.abort();
-        // 	} else {
-        // 		request.continue();
-        // 	}
-        // });
         await mainPage.evaluate(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => false });
         });
@@ -59,10 +35,10 @@ const newBrowser = async () => {
             height: 900
         });
         mainPage.setDefaultTimeout(0);
+        console.log("Waiting for login, please login with camera");
         await mainPage.goto("https://chat.zalo.me/", {
             waitUntil: "networkidle0"
         });
-        console.log("Waiting for login, please login with camera");
         return { browser, mainPage };
     }
     catch (err) {

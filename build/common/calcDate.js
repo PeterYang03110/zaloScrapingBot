@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.converterDate = converterDate;
 exports.converterGMTDate = converterGMTDate;
 exports.stringToDate = stringToDate;
+exports.convertStringToDateTime = convertStringToDateTime;
 const tslib_1 = require("tslib");
 const date_fns_1 = require("date-fns");
 const moment_1 = tslib_1.__importDefault(require("moment"));
@@ -111,4 +112,12 @@ function stringToDate(dateString) {
         // let weekdayDate = getWeekdayDate(capitalizedString);
         // return weekdayDate ? formatDate(weekdayDate) : null;
     }
+}
+function convertStringToDateTime(dateTimeString) {
+    // ex: "2024-07-10 12:28";
+    // Replace the space with 'T' to make it ISO 8601 compliant
+    const isoDateTimeString = dateTimeString.replace(" ", "T");
+    // Create a new Date object
+    const date = new Date(isoDateTimeString);
+    return date;
 }

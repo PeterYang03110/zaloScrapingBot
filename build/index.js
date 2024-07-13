@@ -45,6 +45,7 @@ let workers = [
 });
 async function start(worker, option) {
     // Create browserInstance
+    console.log('worker console => ', worker);
     const browserInstance = await (0, new_browser_1.newBrowser)();
     const { groupListItemSelector, } = constants_1.selectors;
     if (browserInstance == false) {
@@ -64,7 +65,8 @@ async function start(worker, option) {
         while (true) {
             const groupList = await (0, puppeteer_utils_1.getListItemElements)(mainPage, groupListItemSelector, { timeout: 10000 });
             exports.groupListInfo = await (0, scrapGroupList_1.scrapGroupList)(mainPage, worker, groupList, option);
-            await (0, delay_1.delay)(3000);
+            // Wait for 1 min.
+            await (0, delay_1.delay)(10000);
             console.log('search again');
         }
     }

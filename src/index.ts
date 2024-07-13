@@ -23,10 +23,10 @@ export let flag = {};
 export let groupListInfo : Array<GroupInfo> = [];
 
 let workers = [
-  'groupInfo',
+  // 'groupInfo',
   'member',
   'media',
-  'message',
+  // 'message',
 ]
 
 runParallelScrapers(workers, workers.length, function(worker: string){
@@ -57,6 +57,7 @@ runParallelScrapers(workers, workers.length, function(worker: string){
 
 async function start(worker: WorkerType, option: GroupInfoGetOptions) {
   // Create browserInstance
+  console.log('worker console => ', worker)
   const browserInstance = await newBrowser();
   const {
     groupListItemSelector,
@@ -65,7 +66,7 @@ async function start(worker: WorkerType, option: GroupInfoGetOptions) {
   if (browserInstance == false) {
     console.log('Failed to create page.');
     return;
-  }
+  } 
   const { mainPage, browser } = browserInstance;
   zaloBrowser[worker] = browser;
 
@@ -81,7 +82,8 @@ async function start(worker: WorkerType, option: GroupInfoGetOptions) {
     while(true) {
       const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
       groupListInfo = await scrapGroupList(mainPage, worker, groupList, option);
-      await delay(3000);
+      // Wait for 1 min.
+      await delay(10000);
       console.log('search again');
     }
   } else {

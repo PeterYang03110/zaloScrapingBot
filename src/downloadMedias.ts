@@ -34,7 +34,7 @@ export async function downloadMedias(page: Page, worker: WorkerType, title: stri
     for (let i = startIndex; i < 3; i ++) {
         switch (i) {
             case 0:
-                await downloadPicturesAndVideos(page, worker, databasePath(title) + 'media');
+                await downloadPicturesAndVideos(page, worker, databasePath(title) + 'media', type);
                 break;
             case 1:
                 await downloadFiles(page, databasePath(title) + 'files');
@@ -49,7 +49,7 @@ export async function downloadMedias(page: Page, worker: WorkerType, title: stri
 }
 
 
-export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, path: string) {
+export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, path: string, type: string) {
     console.log('downloading images...');
     
     const {
@@ -104,12 +104,14 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
     }, groupPhotoesItemSelector, groupVideosItemSelector);
     
     for (let i  = 0; i < links.length; i ++) {
-        let imageFilename = i;
+        let imageFilename = i + 1;
         if(links[i] == null) continue;
 
     	const filePath = path + '/' + links[i];
         if (downloadFileListFlag[filePath] == true) continue;
-        await saveImage(zaloBrowser[worker], links[i], path, imageFilename, {blob: true});
+        
+        if (type == "Group") await saveImage(zaloBrowser[worker], links[i], path, imageFilename, {blob: true});
+        else await saveImage(zaloBrowser[worker], links[i], path, imageFilename.toString());
         downloadFileListFlag[filePath] == true;
     }
 }
