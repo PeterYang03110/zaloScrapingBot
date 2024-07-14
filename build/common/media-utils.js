@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.saveJsonFile = exports.getJsonFile = void 0;
 exports.saveImage = saveImage;
-exports.downloadBlobImage = downloadBlobImage;
 exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
@@ -102,22 +101,6 @@ async function saveImage(browser, link, path, sid, option) {
         resolve(true);
     });
 }
-async function downloadBlobImage(page, blobUrl, filename) {
-    await page.waitForSelector(`img[src^='blob']`);
-    await page.evaluate(() => {
-        // Create an anchor element
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        // Append the anchor to the body
-        document.body.appendChild(a);
-        // Trigger a click event on the anchor
-        a.click();
-        // Remove the anchor from the body
-        document.body.removeChild(a);
-    });
-    console.log('Blob image download success!');
-}
 async function saveFile(page, fileEle, path, fileName, option) {
     const { groupFileItemDownloadIconSelector, groupFileExceptionItemDownloadIconSelector, groupFileHoverIconSelector } = constants_1.selectors;
     const client = await page.createCDPSession();
@@ -131,6 +114,9 @@ async function saveFile(page, fileEle, path, fileName, option) {
         behavior: 'allow',
         downloadPath: path,
     });
+    if (!fs_1.default.existsSync(path)) {
+        fs_1.default.mkdirSync(path, { recursive: true });
+    }
     // Click the file download button or div
     await fileEle.hover();
     await (0, delay_1.delay)(2000);

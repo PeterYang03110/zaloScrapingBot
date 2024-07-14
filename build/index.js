@@ -14,7 +14,7 @@ exports.flag = {};
 exports.groupListInfo = [];
 let workers = [
     // 'groupInfo',
-    // 'member',
+    'member',
     'media',
     // 'message',
 ];

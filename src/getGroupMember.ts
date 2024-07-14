@@ -1,7 +1,7 @@
 import { ElementHandle, Page } from "puppeteer";
 import { MemberInfo } from "./scrapGroupList";
 import { databasePath, selectors } from "./constants";
-import { click, scroll, waitForSelector } from "./common/puppeteer-utils";
+import { click, getScroll, scroll, waitForSelector } from "./common/puppeteer-utils";
 import { delay } from "./common/delay";
 import { saveJsonFile } from "./common/media-utils";
 
@@ -23,56 +23,62 @@ export async function getGroupMemberList(
     
     await click(page, memberCountSelector, {mandatory: true, timeout: 2000});
 
-    let prevMembers = null;
-    const memberInfoList: MemberInfo[] = [];
+    let memberInfoList: MemberInfo[] = [];
+    let prevMembers = "";
     
-    // while (true) {     
-        // let success = await waitForSelector(page, groupMemberSelector, {})
+    while (true) {     
         let success = await waitForSelector(page, groupMemberSelector, {})
-        // if (!success) break;
         if (!success) return [];
 
         let members = await page.$$(groupMemberSelector);
-        let memberString = JSON.stringify(members.sort());
-
-        let memberCount = prevMembers == null ? 13 : 10;
+        let tempMemberList: MemberInfo[] = [];
+        let memberString = "";
+        
+        let memberCount = prevMembers == "" ? 13 : 14;
+        let scrollDist = prevMembers == "" ? 64 * 11 + 94 : 64 * 13; 
         memberCount = Math.min(members.length, memberCount);
         
-        // if (prevMembers == memberString) break;
+        console.log(prevMembers, memberString);
         
         for (let index = 0; index < memberCount; index ++) {
-            if(prevMembers == null && ((index < 3 && type != "Group") || (index < 2 && type == "Group"))) continue; 
+
+            if(prevMembers == "" && ((index < 3 && type != "Group") || (index < 2 && type == "Group"))) continue; 
+            if(index < 1 && type == "Group") continue;
             // get a member
             if (!members[index]) continue;
             console.log('index => ', index);
+
             let memberInfo = await getMemberInfo(page, members[index]);
-            
+            memberString += JSON.stringify(memberInfo);
+
             await delay(300);
             await members[index].click(); // Close member info    
             if(!memberInfo) {
-                memberInfoList.push({
+                tempMemberList.push({
                     name: 'me'
                 })
-            } else memberInfoList.push(memberInfo);
+            } else if(!memberInfoList.filter(item => {                
+                return JSON.stringify(item) == JSON.stringify(memberInfo)
+            }).length){
+                tempMemberList.push(memberInfo);
+            }
         }
         // Scroll logic
-    //     await waitForSelector(page, memberListScrollSelector, {});
-    //     let scrollElement = await page.evaluate((memberListScrollSelector: string) => {
-    //         let scrollElement = document.querySelector(memberListScrollSelector);
-    //         return scrollElement;
-    //     }, memberListScrollSelector);
+        success = await waitForSelector(page, memberListScrollSelector, {});
 
-    //     let scrollDist = 0;
-    //     if(scrollElement) {
-    //         console.log('Scroll Height => ', scrollElement.scrollHeight);
-    //         scrollDist = scrollElement.scrollHeight / (memberCount / 13); 
-    //         console.log('scroll => ', scrollDist, scrollElement.scrollHeight);
-            
-    //         await scroll(page, memberListScrollSelector, scrollDist, "down", {})
-    //         await delay(5000);
-    //     } 
-    //     prevMembers = memberString;
-    // }
+        if (success) {
+            await scroll(page, memberListScrollSelector, scrollDist, "down", {})
+            let scrollPos = await getScroll(page, memberListScrollSelector, {});
+            console.log('scroll => ', scrollPos);
+            await delay(2000);
+        }
+
+        console.log('memberCount => ', memberInfoList.length);
+        
+        if (prevMembers == memberString) break;
+        memberInfoList = [...memberInfoList, ...tempMemberList]
+        prevMembers = memberString;
+    }
 
     console.log('member scanning finished!');
     await saveJsonFile(databasePath(title), title, {
@@ -82,7 +88,7 @@ export async function getGroupMemberList(
     return memberInfoList;
 }
 
-export const getMemberInfo = async (page: Page, member: ElementHandle<Element>) => {
+export const getMemberInfo = async (page: Page, member: ElementHandle<Element>) : Promise<MemberInfo | null> => {
     const {
         groupMemberSelectorById,
         groupMemberNameSelector,
