@@ -154,6 +154,47 @@ export const scroll = async (page: Page, selector: string, scrollDistance: numbe
     return scrollPos;
 }
 
+export const setScroll = async (page: Page, selector: string, scrollPos: number, direction: Direction, option: WaitForSelectorOption) : Promise<number> => {
+    let pos:any;
+    
+    await waitForSelector(page, selector, option, async function(success: boolean) {
+        if(!success) return success;
+        console.log('scrolling...');
+    })
+
+    pos = await page.evaluate((scrollDistance: number, selector, direction) => {
+        const scrollElement = document.querySelector(selector);
+        
+        if(scrollElement)
+        switch (direction) {
+            case "up":
+                scrollElement.scrollTop = scrollDistance;
+                return scrollElement.scrollTop;
+
+            case "down":
+                scrollElement.scrollTop = scrollDistance;
+                return scrollElement.scrollTop;
+            
+            case "left":
+                scrollElement.scrollLeft = scrollDistance;
+                return scrollElement.scrollLeft;
+            
+            case "right":
+                scrollElement.scrollLeft = scrollDistance;
+                return scrollElement.scrollLeft;
+
+            default:
+                break;
+        } else {
+            return selector;
+        }
+    }, scrollPos, selector, direction);
+    await delay(1000);
+    console.log('scrolling end => ', pos);
+
+    return pos;
+}
+
 export async function getScroll(page: Page, selector: string, option: WaitForSelectorOption) : Promise<number> {
     let scrollPos:any;
     

@@ -7,6 +7,7 @@ import { GroupInfoGetOptions, scrapGroupList } from "./scrapGroupList";
 import { GroupInfo } from './scrapGroupList';
 import { runParallelScrapers } from './worker'
 import { initialize, setLanguage } from "./init";
+export let downloadFileListFlag : Array <any> = [];
 
 export interface ZaloBrowser {
   media?: Browser,
@@ -18,15 +19,14 @@ export interface ZaloBrowser {
 export type WorkerType = "groupInfo" | "member" | "message" | "media";
 export type Language = "English" | "Vietnamese";
 export let zaloBrowser: ZaloBrowser = {};
-export let downloadFileListFlag: any = {};
 export let flag = {};
 export let groupListInfo : Array<GroupInfo> = [];
 
 let workers = [
-  'groupInfo',
+  // 'groupInfo',
   'member',
-  'media',
-  'message',
+  // 'media',
+  // 'message',
 ]
 
 runParallelScrapers(workers, workers.length, function(worker: string){
@@ -80,14 +80,17 @@ async function start(worker: WorkerType, option: GroupInfoGetOptions) {
   
   if (option.message || option.media) {
     while(true) {
-      const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
-      groupListInfo = await scrapGroupList(mainPage, worker, groupList, option);
+      // const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
+      groupListInfo = await scrapGroupList(mainPage, worker, option, function(data: any) {
+        downloadFileListFlag = data;
+        console.log('download file list => ', downloadFileListFlag);
+      });
       // Wait for 1 min.
       await delay(10000);
       console.log('search again');
     }
   } else {
-    const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
-    groupListInfo = await scrapGroupList(mainPage, worker, groupList, option);
+    // const groupList = await getListItemElements(mainPage, groupListItemSelector, {timeout: 10000});
+    groupListInfo = await scrapGroupList(mainPage, worker, option);
   }
 }

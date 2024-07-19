@@ -1,13 +1,17 @@
 import { Page } from "puppeteer";
 import { click, waitForSelector } from "./common/puppeteer-utils";
 import { databasePath, selectors } from "./constants";
-import { WorkerType, downloadFileListFlag, zaloBrowser } from ".";
+import { WorkerType, zaloBrowser } from ".";
 import fs from 'fs'
 import mediaScript from "./common/mediaScript";
 import { delay } from "./common/delay";
 import { saveFile, saveImage, saveJsonFile } from "./common/media-utils";
+import { downloadFileListFlag } from ".";
 
-export async function downloadMedias(page: Page, worker: WorkerType, title: string, type: string) {
+let tempDownloadFileListFlag : Array<any> = downloadFileListFlag;
+
+export async function downloadMedias(page: Page, worker: WorkerType, title: string, type: string, saveCallback?: Function) {
+    tempDownloadFileListFlag = downloadFileListFlag || [];
     const {
         groupMemberCountSelector,
         communityMemberCountSelector,
@@ -34,10 +38,10 @@ export async function downloadMedias(page: Page, worker: WorkerType, title: stri
     for (let i = startIndex; i < 3; i ++) {
         switch (i) {
             case 0:
-                await downloadPicturesAndVideos(page, worker, databasePath(title) + 'media', type);
+                await downloadPicturesAndVideos(page, worker, databasePath(title) + 'media/images', type);
                 break;
             case 1:
-                await downloadFiles(page, databasePath(title) + 'files');
+                await downloadFiles(page, databasePath(title) + 'media/files');
                 break;
             case 2: 
                 await downloadLinks(page, databasePath(title), title);
@@ -46,10 +50,13 @@ export async function downloadMedias(page: Page, worker: WorkerType, title: stri
                 break;
         }
     }        
+    if (saveCallback) {
+        saveCallback(tempDownloadFileListFlag);
+    }
 }
 
 
-export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, path: string, type: string) {
+export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, path: string, type: string, saveCallback?: Function) {
     console.log('downloading images...');
     
     const {
@@ -104,15 +111,15 @@ export async function downloadPicturesAndVideos(page: Page, worker: WorkerType, 
     }, groupPhotoesItemSelector, groupVideosItemSelector);
     
     for (let i  = 0; i < links.length; i ++) {
-        let imageFilename = i + 1;
+        let imageFilename = Date.now().toString();
         if(links[i] == null) continue;
 
     	const filePath = path + '/' + links[i];
-        if (downloadFileListFlag[filePath] == true) continue;
+        if (tempDownloadFileListFlag.filter(item => item == links[i]).length) continue;
         
         if (type == "Group") await saveImage(zaloBrowser[worker], links[i], path, imageFilename, {blob: true});
-        else await saveImage(zaloBrowser[worker], links[i], path, imageFilename.toString());
-        downloadFileListFlag[filePath] == true;
+        else await saveImage(zaloBrowser[worker], links[i], path, imageFilename);
+        tempDownloadFileListFlag.push(links[i]);
     }
 }
 
@@ -144,9 +151,9 @@ export async function downloadFiles(page: Page, path: string) {
         if (!isFile) continue;
 
     	const filePath = path + '/' + (fileName || i.toString()).replace('/', ' ');
-        if (downloadFileListFlag[filePath] == true) continue;
+        if (tempDownloadFileListFlag.filter(item => item == filePath).length) continue;
         await saveFile(page, fileElementList[i], path, fileName || i.toString(), {exception: true});
-        downloadFileListFlag[filePath] = true;
+        tempDownloadFileListFlag.push(filePath);
         console.log('File download success!');
     }
 }

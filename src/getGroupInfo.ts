@@ -1,12 +1,14 @@
 import { Page } from "puppeteer";
-import { databasePath, selectors } from "./constants";
+import { databasePath, databasePath1, selectors } from "./constants";
 import { click, waitForSelector } from "./common/puppeteer-utils";
 import { GroupInfo } from "./scrapGroupList";
 import { delay } from "./common/delay";
-import { saveImage, saveJsonFile } from "./common/media-utils";
+import { saveImage, saveJsonFile, updateJsonFile } from "./common/media-utils";
 import { WorkerType, zaloBrowser } from ".";
 
 export async function getGroupInfo(page: Page, worker: WorkerType, title: string) {
+    // await updateJsonFile(databasePath(title), databasePath1(title), title);
+    // return false;
     const {
         groupTypeSelector,
         groupMemberCountSelector,
@@ -35,7 +37,7 @@ export async function getGroupInfo(page: Page, worker: WorkerType, title: string
     // Get Link
     await waitForSelector(page, groupLinkSelector, {timeout: 3000, countLimit: 5, mandatory: true});
     await click(page, groupLinkSelector, {});
-    await delay(2000);
+    await delay(5000);
     let groupLink = await page.evaluate((groupLinkSelector) => {
         return document.querySelector(groupLinkSelector)?.textContent || '';
     }, groupLinkSelector)
@@ -46,7 +48,7 @@ export async function getGroupInfo(page: Page, worker: WorkerType, title: string
         let link = await page.evaluate((groupImageSelector) => {
             return document.querySelector(groupImageSelector)?.getAttribute("src");
         }, groupImageSelector);
-        await saveImage(zaloBrowser[worker], link, databasePath(title) + '/avatar', 'Avatar');
+        await saveImage(zaloBrowser[worker], link, databasePath(title) + '/media/cover', 'Avatar');
     });
     // Close modal
     await click(page, groupAvatarSelector, {});
@@ -63,8 +65,11 @@ export async function getGroupInfo(page: Page, worker: WorkerType, title: string
     let info: GroupInfo = {
         type,
         name: title,
-        link: groupLink,
-        memberCount: parseInt(memberCount)
+        id: groupLink,
+        status: memberCount,
+        allow_status: 'active',
+        description: '',
+        sid: '',
     };
 
     await saveJsonFile(databasePath(title), title, info)

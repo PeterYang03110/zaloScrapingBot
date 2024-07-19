@@ -11,7 +11,7 @@ export const selectors = {
     groupMemberCountBackSelector: '#chatInfo > div.chat-info__header.web > div-b18 > div > div > i',
     groupAvatarSelector: '#ava_chat_box_view',
     groupImageSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__primary-info-container > div.pi-info-layout__mini-info-container > div > div.rel.zavatar-container.pi-mini-info-section__avatar > div.zavatar.zavatar-xxll.zavatar-single.flx.flx-al-c.flx-center.rel.disableDrag.clickable > img',
-    groupLinkSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div:nth-child(3) > div > div > div:nth-child(1) > div > div.flx.flx-col.flx-center.flx-1 > div.pi-group-profile-link__link',
+    groupLinkSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div > div > div > div:nth-child(1) > div > div.flx.flx-col.flx-center.flx-1 > div.pi-group-profile-link__link',
     groupInfoToggleButtonSelector: '#headerBtns > div.z--btn--v2.btn-tertiary-neutral.medium.focused.--rounded.icon-only > i',
     groupMediaViewAllButtonSelector: '#shared-images-container > div.slideToTop.w100 > div.z--btn--v2.btn-neutral.medium.view-more__full.--full-width.view-more__full', // redefine it
     groupFileViewAllButtonSelector: '#info-files-container > div.slideToTop > div > div.z--btn--v2.btn-neutral.medium.wi.view-more__full.--rounded.wi.view-more__full', //redefine it
@@ -44,6 +44,22 @@ export const selectors = {
     groupMemberInfoListItemTitleSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div.pi-info-card.pi-page-bottom-margin > div > div > div > div > span.pi-info-item__title',
     groupMemberInfoListItemContentSelectorById: (id: number) => `#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div:nth-child(1) > div > div > div:nth-child(${id})`,
     groupMemberInfoListItemTitleSelectorById: (id: number) => `#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div.pi-info-card.pi-page-bottom-margin > div > div > div:nth-child(${id}) > div > span.pi-info-item__title`,
+    groupMemberInfoListItemAvatarSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__primary-info-container.pi-info-layout__primary-info-container_has-cover > div.pi-info-layout__mini-info-container > div > div.rel.zavatar-container.pi-mini-info-section__avatar > div > img',
+    groupMemberInfoListItemCoverImageSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-cover.clickable.rel > img',
+    groupMemberInfoRoleSelector: 'div.chat-box-member__info__name.v2 > span',
+    groupMemberInfoSearchInputSelector: '#member-group > div:nth-child(1) > div > div:nth-child(1) > div > div > div > div > span > input',
+    groupMemberInfoAddMemberButtonSelector: '#member-group > div:nth-child(1) > div > div:nth-child(1) > div > div > div:nth-child(1) > div.chat-box-member__add-member',
+    // my profile info selector
+    groupMemberMyNameSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__primary-info-container.pi-info-layout__primary-info-container_has-cover > div.pi-info-layout__mini-info-container > div > div.pi-mini-info-section__info > div.pi-mini-info-section__name > div > div.truncate',
+    groupMemberMyInfoListItemTitleSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div > div > div.pi-info-section__info-list > div > div > span.pi-info-item__title',
+    groupMemberMyInfoListItemContentSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div > div > div.pi-info-section__info-list > div > div > span.content-copiable',
+    groupMemberIsBusinessSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div:nth-child(1) > div > div.pi-info-section__cta > div.z--btn--v2.btn-tertiary-neutral.medium.--full-width',
+    groupMemberMyInfoListItemAvatarSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__primary-info-container.pi-info-layout__primary-info-container_has-cover > div > div > div.rel.zavatar-container.pi-mini-info-section__avatar > div.zavatar.zavatar-xxll.zavatar-single.flx.flx-al-c.flx-center.rel.disableDrag.clickable > img',
+    // Business profile info selector
+    groupMemberBusinessNameSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__primary-info-container > div > div > div.pi-mini-info-section__info > div.pi-mini-info-section__name > div > div',
+    groupMemberBusinessInfoListItemTitleSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div:nth-child(2) > div > div > div > div > span.pi-info-item__title',
+    groupMemberBusinessInfoListItemContentSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div:nth-child(2) > div > div > div > div > span.content-copiable',
+    groupMemberBusinessInfoListDescriptionSelector: '#zl-modal__dialog-body > div > div > div > div > div:nth-child(1) > div > div.pi-info-layout__extra-info-container > div.pi-info-card.pi-page-bottom-margin > div > div > div > div > span.content-copiable > div',
     // menu selector
     menuContactSelector: '#ContactTabV2 > div > div:nth-child(2)',
     mainTabItemSelector: '#main-tab > div:nth-child(1) > div.nav__tabs__top > div:nth-child(2)',
@@ -75,8 +91,12 @@ export const selectors = {
     groupMessageDateSelector: '#messageViewScroll > div.block-date > div.chat-date.--time.island > span > span',
     groupMessageQuoteTextSelector: 'div.quote-text.truncate',
 }
-
 export const databasePath = (groupName: string) => {
     let validGroupName = groupName.replace('/', '-')
     return `jsonDatabase/GroupAndCommunityData/${validGroupName}/`;
+}
+
+export const databasePath1 = (groupName: string) => {
+    let validGroupName = groupName.replace('/', '-')
+    return `jsonDatabase/GroupAndCommunityData1/${validGroupName}/`;
 }

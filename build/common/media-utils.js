@@ -1,10 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveJsonFile = exports.getJsonFile = void 0;
+exports.saveJsonFile = exports.updateJsonFile = exports.getJsonFile = void 0;
 exports.saveImage = saveImage;
 exports.saveFile = saveFile;
 const tslib_1 = require("tslib");
 const fs_1 = tslib_1.__importDefault(require("fs"));
+const moment_1 = tslib_1.__importDefault(require("moment"));
+const fsExtra = tslib_1.__importStar(require("fs-extra"));
 const constants_1 = require("../constants");
 const mediaScript_1 = tslib_1.__importDefault(require("./mediaScript"));
 const delay_1 = require("./delay");
@@ -22,22 +24,93 @@ const getJsonFile = async (path, fileName) => {
     }
 };
 exports.getJsonFile = getJsonFile;
+const updateJsonFile = async (path, path1, fileName) => {
+    const oldData = await (0, exports.getJsonFile)(path1, fileName.replace('/', ' '));
+    const newData = await (0, exports.getJsonFile)(path, fileName.replace('/', ' '));
+    if (oldData.contents && oldData.contents.length) {
+        newData.content = oldData.contents.map((content) => {
+            let _content = content.subContext
+                ? {
+                    context: content.context || '',
+                    postDate: content.date,
+                    AuthorName: content.author,
+                    AuthorId: '',
+                    subContext: content.subContext,
+                    reactions: {
+                        count: 0,
+                        users: []
+                    },
+                    post: {
+                        images: []
+                    }
+                }
+                : {
+                    context: content.context || '',
+                    postDate: content.date,
+                    AuthorName: content.author,
+                    AuthorId: '',
+                    subContext: "",
+                    reactions: {
+                        count: 0,
+                        users: []
+                    },
+                    post: {
+                        images: []
+                    }
+                };
+            console.log(_content);
+            return _content;
+        });
+        delete newData.contents;
+    }
+    let now = (0, moment_1.default)();
+    newData.updateDate = now.toString();
+    try {
+        const jsonString = JSON.stringify(newData, null, 2);
+        // If not exist, create directory
+        if (!fs_1.default.existsSync(path)) {
+            fs_1.default.mkdirSync(path, { recursive: true });
+        }
+        // Write the JSON string to a file
+        fs_1.default.writeFile(`${path}/${fileName.replace('/', ' ')}.json`, jsonString, (err) => {
+            if (err) {
+                console.error('Error writing file:', err);
+                return;
+            }
+            console.log('JSON data saved to file.');
+        });
+        return;
+    }
+    catch (error) {
+        console.log(error);
+    }
+};
+exports.updateJsonFile = updateJsonFile;
 const saveJsonFile = async (path, fileName, data, option) => {
     try {
         // Convert the data to a JSON string
         const oldData = await (0, exports.getJsonFile)(path, fileName.replace('/', ' '));
         let newData = data;
         if (oldData != false) {
-            if (oldData.contents && oldData.contents.length) {
-                let lastDate = (0, calcDate_1.convertStringToDateTime)(oldData.contents[0].date);
-                let newContents = newData.contents?.filter(content => {
+            if (oldData.content && oldData.content.length) {
+                let lastDate = (0, calcDate_1.convertStringToDateTime)(oldData.content[0].postDate);
+                let newContent = newData.content?.filter(content => {
                     return (0, calcDate_1.convertStringToDateTime)(content.date) > lastDate;
                 });
-                console.log('new contents => ', newContents);
-                newData.contents = [...(newContents || []), ...oldData.contents];
+                console.log('new content => ', newContent);
+                newData.content = [...(newContent || []), ...oldData.content];
             }
-            if (oldData.links && oldData.links.length)
-                newData.links = [...(newData.links || []), ...oldData.links];
+            let links = oldData.links || [];
+            if (oldData.links && oldData.links.length && newData.links) {
+                let newDataLinksLength = newData.links.length;
+                for (let i = 0; i < newDataLinksLength; i++) {
+                    let newDataLink = newData.links[i];
+                    if (oldData.links.filter((link) => link == newDataLink).length)
+                        continue;
+                    links.push(newDataLink);
+                }
+            }
+            newData.links = links;
             newData = {
                 ...oldData,
                 ...newData
@@ -45,6 +118,7 @@ const saveJsonFile = async (path, fileName, data, option) => {
         }
         else
             newData = data;
+        newData.updateDate = (0, moment_1.default)().toString();
         const jsonString = JSON.stringify(newData, null, 2);
         // If not exist, create directory
         if (!fs_1.default.existsSync(path)) {
@@ -146,35 +220,30 @@ async function saveFile(page, fileEle, path, fileName, option) {
         }
     }
     await (0, delay_1.delay)(1000);
-    const filePath = path + '/' + fileName;
-    console.log('File path => ', filePath);
+    const filePath = path + '/' + fileName.replaceAll(' ', ' ').trim();
     // Check if the file is downloaded
     while (true) {
         if (isExistFile(path, fileName)) {
+            if (fileName.endsWith('.js') || fileName.endsWith('.ts')) {
+                fsExtra.rename(filePath, filePath + 'BK', function (err) {
+                    if (err)
+                        throw err;
+                    console.log('file renamed!');
+                });
+            }
             break;
         }
         else {
             await new Promise(resolve => setTimeout(resolve, 500));
-            console.log('downloading...', filePath, fs_1.default.existsSync(filePath));
+            console.log('downloading...', filePath, isExistFile(path, fileName));
         }
     }
-    await new Promise((resolve, reject) => {
-        const checkFile = setInterval(async () => {
-            if (isExistFile(path, fileName)) {
-                clearInterval(checkFile);
-                resolve(true);
-            }
-        }, 100);
-    }).catch(err => {
-        return err;
-    });
     console.log(`File downloaded to: ${filePath}`);
 }
 function isExistFile(path, fileName) {
     const files = fs_1.default.readdirSync(path);
     const downloadedFile = files.filter((file) => {
-        console.log(file.trim(), fileName.replace(' ', ' '));
-        return file.trim() == fileName.replace(' ', ' ').trim();
+        return file.trim() == fileName.replaceAll(' ', ' ').trim();
     }); // Adjust the condition
     if (downloadedFile.length)
         return true;

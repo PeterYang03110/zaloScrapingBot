@@ -14,16 +14,28 @@ import { downloadMedias } from "./downloadMedias";
 export interface GroupInfo {
     name: string,
     type?: string,
-    memberCount?: number,
-    link?: string,
-    admin?: Array<MemberInfo | undefined>,
-    owner?: MemberInfo,
-    members?: Array<MemberInfo>,
-    contents?: Array<any>,
-    links?: Array<string | null>
+    id?: string,
+    status?: string,
+    allow_status?: string,
+    content?: Array<any>,
+    links?: Array<string | null>,
+    members?: {
+        count: number,
+        userInfos: Array<MemberInfo | null>
+    },
+    description?: string,
+    sid?: string,
+    updateDate?: string
 }
 
 export interface MemberInfo {
+    sid?: string,
+    id?: string,
+    category?: string,
+    address?: string,
+    email?: string,
+    url?: string,
+    dateJoined?: string,
     avatar?: string,
     name: string,
     Gender?: string,
@@ -44,7 +56,7 @@ export interface GroupInfoGetOptions {
  * @param groups list of Groups and Communites
  * @returns groupInfoList
  */
-export const scrapGroupList = async (page: Page, worker: WorkerType, groups: Array< ElementHandle<Element> >, option: GroupInfoGetOptions) : Promise < Array <GroupInfo> > => {
+export const scrapGroupList = async (page: Page, worker: WorkerType, option: GroupInfoGetOptions, callback?: Function) : Promise < Array <GroupInfo> > => {
     const {
         groupListItemTitleSelector,
         mainTabItemSelector,
@@ -77,19 +89,21 @@ export const scrapGroupList = async (page: Page, worker: WorkerType, groups: Arr
                 console.log('groupInfo => ', title, groupInfo);
             }
             if (option.member) {
-                groupMemberList = await getGroupMemberList(page, title, type);
+                groupMemberList = await getGroupMemberList(page, worker, title, type);
             }
             if (option.message) {
                 await getGroupMessages(page, title, type);
             }
             if(option.media) {
                 console.log('Prepairing download medias...');
-                await downloadMedias(page, worker, title, type);
+                await downloadMedias(page, worker, title, type, function(data: any) {
+                    if (callback) callback(data);
+                });
                 console.log('Finished download medias...');
             }
 
             await delay(1000);
-            console.log('groupMemberList => ', title);
+            console.log('groupList => ', title);
             success = await click(page, mainTabItemSelector, { mandatory: true, timeout: 3000 }); // Get out group
             
             // If scraping failed, it will return boolean value

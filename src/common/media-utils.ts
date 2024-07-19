@@ -1,4 +1,6 @@
 import fs from "fs"
+import moment from 'moment'
+import * as fsExtra from "fs-extra"
 import { GroupInfo } from "../scrapGroupList";
 import { databasePath, selectors } from "../constants";
 import { click, waitForSelector } from "./puppeteer-utils";
@@ -20,30 +22,106 @@ export const getJsonFile = async (path: string, fileName: string) : Promise <any
 	}
 }
 
+export const updateJsonFile = async (path: string, path1: string, fileName: string) : Promise<void> => {
+	const oldData = await getJsonFile(path1, fileName.replace('/', ' '));
+	const newData = await getJsonFile(path, fileName.replace('/', ' '));
+
+	if (oldData.contents && oldData.contents.length) {
+		newData.content = oldData.contents.map((content: any) => {
+			let _content = content.subContext
+				? {
+					context: content.context || '',
+					postDate: content.date,
+					AuthorName: content.author,
+					AuthorId: '',
+					subContext: content.subContext,
+					reactions: {
+						count: 0,
+						users: []
+					},
+					post: {
+						images: []
+					}
+				}
+				: {
+					context: content.context || '',
+					postDate: content.date,
+					AuthorName: content.author,
+					AuthorId: '',
+					subContext: "",
+					reactions: {
+						count: 0,
+						users: []
+					},
+					post: {
+						images: []
+					}
+				}
+
+			console.log(_content);
+			
+			return _content
+		})
+		delete newData.contents
+	}
+	let now = moment();
+	newData.updateDate = now.toString();
+	try {
+		const jsonString = JSON.stringify(newData, null, 2);
+        // If not exist, create directory
+        if (!fs.existsSync(path)) {
+            fs.mkdirSync(path, { recursive: true });
+        }
+        
+        // Write the JSON string to a file
+        fs.writeFile(`${path}/${fileName.replace('/', ' ')}.json`, jsonString, (err) => {
+            if (err) {
+                console.error('Error writing file:', err);
+                return;
+            }
+            console.log('JSON data saved to file.');
+        })
+
+		return;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
 export const saveJsonFile = async (path: string, fileName: string, data: GroupInfo, option?: any) : Promise<boolean> => {
     try {
 		// Convert the data to a JSON string
 		const oldData = await getJsonFile(path, fileName.replace('/', ' '));
 		
 		let newData = data;
-		if(oldData != false) {
-			if(oldData.contents && oldData.contents.length) {
-				let lastDate = convertStringToDateTime(oldData.contents[0].date);
+		if(oldData != false) {			
+			if(oldData.content && oldData.content.length) {
+				let lastDate = convertStringToDateTime(oldData.content[0].postDate);
 				
-				let newContents = newData.contents?.filter(content => {					
+				let newContent = newData.content?.filter(content => {					
 					return convertStringToDateTime(content.date) > lastDate
 				})
-				console.log('new contents => ', newContents);
+				console.log('new content => ', newContent);
 				
-				newData.contents = [...(newContents || []), ...oldData.contents]
+				newData.content = [...(newContent || []), ...oldData.content]
 			}
-			if(oldData.links && oldData.links.length) newData.links = [...(newData.links || []), ...oldData.links]
+			let links = oldData.links || [];
+			if(oldData.links && oldData.links.length && newData.links) {
+				let newDataLinksLength = newData.links.length;
+				for (let i = 0; i < newDataLinksLength; i ++) {
+					let newDataLink = newData.links[i];
+					if (oldData.links.filter((link: any) => link == newDataLink).length) continue;
+					links.push(newDataLink);
+				}
+			}
+			newData.links = links;
 
 			newData = {
 				...oldData,
 				...newData
 			}
 		} else newData = data;
+		newData.updateDate = moment().toString()
 
 		const jsonString = JSON.stringify(newData, null, 2);
         // If not exist, create directory
@@ -64,8 +142,7 @@ export const saveJsonFile = async (path: string, fileName: string, data: GroupIn
 	} catch (err) { console.log(err); return false; }
 }
 
-export async function saveImage(browser: any, link: any, path: string, sid: any, option?: any) {
-	
+export async function saveImage(browser: any, link: any, path: string, sid: any, option?: any) {	
 	return new Promise(async (resolve) => {
 		const page = await browser.newPage();
 		await page.evaluate(mediaScript);
@@ -155,29 +232,23 @@ export async function saveFile(page: Page, fileEle: ElementHandle<Element>, path
 	}
 
 	await delay(1000);
-	const filePath = path + '/' + fileName;
-	console.log('File path => ' ,filePath);
+	const filePath = path + '/' + fileName.replaceAll(' ', ' ').trim();
 	
 	// Check if the file is downloaded
 	while (true) {
 		if(isExistFile(path, fileName)) {
+			if (fileName.endsWith('.js') || fileName.endsWith('.ts')) {
+				fsExtra.rename(filePath, filePath + 'BK', function(err) {
+					if (err) throw err;
+					console.log('file renamed!');					
+				})
+			}
 			break;
 		} else {
 			await new Promise(resolve => setTimeout(resolve, 500));
-			console.log('downloading...', filePath, fs.existsSync(filePath));
+			console.log('downloading...', filePath, isExistFile(path, fileName) );
 		}
 	}
-
-	await new Promise((resolve, reject) => {		
-		const checkFile = setInterval(async () => {
-			if(isExistFile(path, fileName)) {
-				clearInterval(checkFile);
-				resolve(true);
-			}
-		}, 100);
-	}).catch(err => {
-		return err;
-	});
 
   	console.log(`File downloaded to: ${filePath}`);
 }
@@ -186,8 +257,7 @@ function isExistFile(path: string, fileName: string) {
 	const files = fs.readdirSync(path);
 	
     const downloadedFile = files.filter((file) => {
-		console.log(file.trim(), fileName.replace(' ', ' '));
-		return file.trim() == fileName.replace(' ', ' ').trim()
+		return file.trim() == fileName.replaceAll(' ', ' ').trim()
 	}); // Adjust the condition
 
 	if (downloadedFile.length) return true;

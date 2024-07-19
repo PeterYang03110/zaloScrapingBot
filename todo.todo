@@ -1,26 +1,11 @@
-Login() --- ignore ---
-getChannelsAndCommunities() => waitAndClick(selector) ;simple list --- 80% done ---
-getChannelDatas(channelId) =>
-                                getChannelAvatar(channelId)
-                                getOwnerAndAdmin(channelId)
-                                getName(channelId)
-                                downloadMedia(channelId)
-                                chatContext() => chatSubContext()
-                                                 chatTime()
-                                                 getReaction()
-                                                 
-                                
-1 login  --- done ---
-2 getChannelsAndCommunities(), waitAndClick(selector), --- done ---
-                               getOwnerAndAdmin()
-                               getMembers() 
-                               getName() --- done ---
-3 getChannelsAndCommunities() => downloadMedia()
-                                 getChannelDatas.getChannelAvatar()
-4 chatContext() => chatSubContext()
-                    chatTime()
-                    getReaction()
-5 bug fix -> remove / from folder name
-          -> in bio -> phone number
-6 integration
-7 bug fix
+1. Download all avatars of members ---
+2. Get all members that you can. ---
+3. Remove all members had the name "me"  (BECAUSE IT IS VIA ACCOUNT) ---
+4. Duplicate member profile name but check it if those are from different account. ---
+5. Get owner or admin of the group/community. ---
+6. Files and media, get all of them. ---check
+7. Rename some specific extension is code like .js .html, .css, .ts... that can affected the code and made the engine self restart.
+=> maybe .js => .jsBk (Add Bk after those extension, then we can batch remove "Bk" from the extension later) --
+8. Makes sure to get full messages. 
+9. 1 (2) #.js is missing the extension ".js" in the file name. Fix it.
+10. Figure why it skips some files like .mp4 or .wav or pretty common extension being listed in the "Sheet" i've sent.

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scroll = exports.getListItemElements = exports.click = exports.waitForSelector = void 0;
+exports.setScroll = exports.scroll = exports.getListItemElements = exports.click = exports.waitForSelector = void 0;
 exports.getScroll = getScroll;
 const delay_1 = require("./delay");
 /**
@@ -127,6 +127,41 @@ const scroll = async (page, selector, scrollDistance, direction, option) => {
     return scrollPos;
 };
 exports.scroll = scroll;
+const setScroll = async (page, selector, scrollPos, direction, option) => {
+    let pos;
+    await (0, exports.waitForSelector)(page, selector, option, async function (success) {
+        if (!success)
+            return success;
+        console.log('scrolling...');
+    });
+    pos = await page.evaluate((scrollDistance, selector, direction) => {
+        const scrollElement = document.querySelector(selector);
+        if (scrollElement)
+            switch (direction) {
+                case "up":
+                    scrollElement.scrollTop = scrollDistance;
+                    return scrollElement.scrollTop;
+                case "down":
+                    scrollElement.scrollTop = scrollDistance;
+                    return scrollElement.scrollTop;
+                case "left":
+                    scrollElement.scrollLeft = scrollDistance;
+                    return scrollElement.scrollLeft;
+                case "right":
+                    scrollElement.scrollLeft = scrollDistance;
+                    return scrollElement.scrollLeft;
+                default:
+                    break;
+            }
+        else {
+            return selector;
+        }
+    }, scrollPos, selector, direction);
+    await (0, delay_1.delay)(1000);
+    console.log('scrolling end => ', pos);
+    return pos;
+};
+exports.setScroll = setScroll;
 async function getScroll(page, selector, option) {
     let scrollPos;
     await (0, exports.waitForSelector)(page, selector, option, async function (success) {

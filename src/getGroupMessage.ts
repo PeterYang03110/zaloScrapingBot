@@ -25,7 +25,6 @@ export async function getGroupMessage(page: Page, title: string, type: string) {
         if(scrollPos == 0) break;
     }
     
-    
     let messageBLocksByDate = await page.$$(groupMessageBlockSelectorByDate);
     messageBLocksByDate = messageBLocksByDate.reverse();
     
@@ -96,20 +95,37 @@ export async function getGroupMessage(page: Page, title: string, type: string) {
     
                 messages.push(existSubContent ? {
                     context: messageContent,
-                    date: day + ' ' + messageDate,
-                    author: messageAuthor,
-                    subContext: messageSubContent
+                    postDate: day + ' ' + messageDate,
+                    AuthorName: messageAuthor,
+                    AuthorId: '',
+                    subContext: messageSubContent,
+                    reactions: {
+                        count: 0,
+                        users: []
+                    },
+                    post: {
+                        images: []
+                    }
                 } : {
                     context: messageContent,
-                    date: day + ' ' + messageDate,
-                    author: messageAuthor,
+                    postDate: day + ' ' + messageDate,
+                    AuthorName: messageAuthor,
+                    AuthorId: '',
+                    subContext: '',
+                    reactions: {
+                        count: 0,
+                        users: []
+                    },
+                    post: {
+                        images: []
+                    }
                 })    
             }
         }
     }
     
     await saveJsonFile(databasePath(title), title, {
-        contents: messages,
+        content: messages,
         type,
         name: title
     });
